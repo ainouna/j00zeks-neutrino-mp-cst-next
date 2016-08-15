@@ -146,10 +146,12 @@ const SNeutrinoSettings::FONT_TYPES menu_font_sizes[4] =
 	SNeutrinoSettings::FONT_TYPE_MENU_HINT
 };
 
-const SNeutrinoSettings::FONT_TYPES other_font_sizes[2] =
+const SNeutrinoSettings::FONT_TYPES other_font_sizes[4] =
 {
 	SNeutrinoSettings::FONT_TYPE_SUBTITLES,
-	SNeutrinoSettings::FONT_TYPE_FILEBROWSER_ITEM
+	SNeutrinoSettings::FONT_TYPE_FILEBROWSER_ITEM,
+	SNeutrinoSettings::FONT_TYPE_MOVIEBROWSER_LIST,
+	SNeutrinoSettings::FONT_TYPE_MOVIEBROWSER_DESC
 };
 
 #define FONT_GROUP_COUNT 6
@@ -160,7 +162,7 @@ font_sizes_groups font_sizes_groups[FONT_GROUP_COUNT] =
 	{LOCALE_FONTMENU_EVENTLIST  , 5, eventlist_font_sizes  , "fontsize.deve", LOCALE_MENU_HINT_EVENTLIST_FONTS },
 	{LOCALE_FONTMENU_EPG        , 4, epg_font_sizes        , "fontsize.depg", LOCALE_MENU_HINT_EPG_FONTS },
 	{LOCALE_FONTMENU_INFOBAR    , 4, infobar_font_sizes    , "fontsize.dinf", LOCALE_MENU_HINT_INFOBAR_FONTS },
-	{LOCALE_FONTMENU_OTHER      , 2, other_font_sizes      , "fontsize.doth", LOCALE_MENU_HINT_OTHER_FONTS }
+	{LOCALE_FONTMENU_OTHER      , 4, other_font_sizes      , "fontsize.doth", LOCALE_MENU_HINT_OTHER_FONTS }
 };
 
 font_sizes_struct neutrino_font[SNeutrinoSettings::FONT_TYPE_COUNT] =
@@ -168,7 +170,8 @@ font_sizes_struct neutrino_font[SNeutrinoSettings::FONT_TYPE_COUNT] =
 	{LOCALE_FONTSIZE_MENU               ,  20, CNeutrinoFonts::FONT_STYLE_BOLD   , 0},
 	{LOCALE_FONTSIZE_MENU_TITLE         ,  30, CNeutrinoFonts::FONT_STYLE_BOLD   , 0},
 	{LOCALE_FONTSIZE_MENU_INFO          ,  16, CNeutrinoFonts::FONT_STYLE_REGULAR, 0},
-	{LOCALE_FONTSIZE_EPG_TITLE          ,  25, CNeutrinoFonts::FONT_STYLE_REGULAR, 1},
+	{LOCALE_FONTSIZE_MENU_HINT          ,  16, CNeutrinoFonts::FONT_STYLE_REGULAR, 0},
+	{LOCALE_FONTSIZE_EPG_TITLE          ,  25, CNeutrinoFonts::FONT_STYLE_BOLD   , 1},
 	{LOCALE_FONTSIZE_EPG_INFO1          ,  17, CNeutrinoFonts::FONT_STYLE_ITALIC , 2},
 	{LOCALE_FONTSIZE_EPG_INFO2          ,  17, CNeutrinoFonts::FONT_STYLE_REGULAR, 2},
 	{LOCALE_FONTSIZE_EPG_DATE           ,  15, CNeutrinoFonts::FONT_STYLE_REGULAR, 2},
@@ -177,18 +180,19 @@ font_sizes_struct neutrino_font[SNeutrinoSettings::FONT_TYPE_COUNT] =
 	{LOCALE_FONTSIZE_EVENTLIST_ITEMSMALL,  14, CNeutrinoFonts::FONT_STYLE_REGULAR, 1},
 	{LOCALE_FONTSIZE_EVENTLIST_DATETIME ,  16, CNeutrinoFonts::FONT_STYLE_REGULAR, 1},
 	{LOCALE_FONTSIZE_EVENTLIST_EVENT    ,  17, CNeutrinoFonts::FONT_STYLE_REGULAR, 1},
-	{LOCALE_FONTSIZE_CHANNELLIST        ,  20, CNeutrinoFonts::FONT_STYLE_BOLD   , 1},
-	{LOCALE_FONTSIZE_CHANNELLIST_DESCR  ,  20, CNeutrinoFonts::FONT_STYLE_REGULAR, 1},
-	{LOCALE_FONTSIZE_CHANNELLIST_NUMBER ,  14, CNeutrinoFonts::FONT_STYLE_BOLD   , 2},
-	{LOCALE_FONTSIZE_CHANNELLIST_EVENT  ,  17, CNeutrinoFonts::FONT_STYLE_REGULAR, 2},
+	{LOCALE_FONTSIZE_CHANNELLIST        ,  30, CNeutrinoFonts::FONT_STYLE_BOLD   , 1},
+	{LOCALE_FONTSIZE_CHANNELLIST_DESCR  ,  30, CNeutrinoFonts::FONT_STYLE_REGULAR, 1},
+	{LOCALE_FONTSIZE_CHANNELLIST_NUMBER ,  24, CNeutrinoFonts::FONT_STYLE_BOLD   , 2},
+	{LOCALE_FONTSIZE_CHANNELLIST_EVENT  ,  20, CNeutrinoFonts::FONT_STYLE_REGULAR, 2},
 	{LOCALE_FONTSIZE_CHANNEL_NUM_ZAP    ,  40, CNeutrinoFonts::FONT_STYLE_BOLD   , 0},
 	{LOCALE_FONTSIZE_INFOBAR_NUMBER     ,  50, CNeutrinoFonts::FONT_STYLE_BOLD   , 0},
 	{LOCALE_FONTSIZE_INFOBAR_CHANNAME   ,  30, CNeutrinoFonts::FONT_STYLE_BOLD   , 0},
 	{LOCALE_FONTSIZE_INFOBAR_INFO       ,  20, CNeutrinoFonts::FONT_STYLE_REGULAR, 1},
 	{LOCALE_FONTSIZE_INFOBAR_SMALL      ,  14, CNeutrinoFonts::FONT_STYLE_REGULAR, 1},
+	{LOCALE_FONTSIZE_SUBTITLES          ,  25, CNeutrinoFonts::FONT_STYLE_BOLD   , 0},
 	{LOCALE_FONTSIZE_FILEBROWSER_ITEM   ,  16, CNeutrinoFonts::FONT_STYLE_BOLD   , 1},
-	{LOCALE_FONTSIZE_MENU_HINT          ,  16, CNeutrinoFonts::FONT_STYLE_REGULAR, 0},
-	{LOCALE_FONTSIZE_SUBTITLES          ,  25, CNeutrinoFonts::FONT_STYLE_BOLD   , 0}
+	{LOCALE_FONTSIZE_MOVIEBROWSER_LIST  ,  22, CNeutrinoFonts::FONT_STYLE_REGULAR, 1},
+	{LOCALE_FONTSIZE_MOVIEBROWSER_DESC  ,  22, CNeutrinoFonts::FONT_STYLE_ITALIC , 1}
 };
 
 #if HAVE_GENERIC_HARDWARE
@@ -401,7 +405,7 @@ const CMenuOptionChooser::keyval INFOBAR_CASYSTEM_MODE_OPTIONS[INFOBAR_CASYSTEM_
 	{ 2, LOCALE_MISCSETTINGS_INFOBAR_CASYSTEM_MINI },
 	{ 3, LOCALE_OPTIONS_OFF  }
 };
-#if 0 //not used
+#if 0 //not used 
 #define SHOW_INFOMENU_MODE_OPTION_COUNT 2
 const CMenuOptionChooser::keyval SHOW_INFOMENU_MODE_OPTIONS[SHOW_INFOMENU_MODE_OPTION_COUNT] =
 {
@@ -454,6 +458,20 @@ const CMenuOptionChooser::keyval INFOBAR_SHOW_RES_MODE_OPTIONS[INFOBAR_SHOW_RES_
 	{ 0, LOCALE_OPTIONS_ON },
 	{ 1, LOCALE_MISCSETTINGS_INFOBAR_SHOW_RES_SIMPLE },
 	{ 2, LOCALE_OPTIONS_OFF }
+};
+
+#define CHANNELLIST_LOOP_OPTIONS_COUNT 2
+const CMenuOptionChooser::keyval  CHANNELLIST_LOOP_OPTIONS[CHANNELLIST_LOOP_OPTIONS_COUNT]=
+{
+	{ 0 , LOCALE_OPTIONS_OFF },
+	{ 1 , LOCALE_OPTIONS_ON }
+};
+
+#define CHANNELLIST_NAME_AND_DESCR_OPTION_COUNT 2
+const CMenuOptionChooser::keyval  CHANNELLIST_NAME_AND_DESCR_OPTION[CHANNELLIST_NAME_AND_DESCR_OPTION_COUNT]=
+{
+	{ 0 , LOCALE_OPTIONS_OFF },
+	{ 1 , LOCALE_OPTIONS_ON }
 };
 
 #define CHANNELLIST_ADDITIONAL_OPTION_COUNT 3
@@ -1051,6 +1069,7 @@ void COsdSetup::showOsdMenusSetup(CMenuWidget *menu_menus)
 	CMenuOptionChooser * mc;
 
 	submenu_menus->addIntroItems(LOCALE_SETTINGS_MENUS);
+
 	// menu position
 	mc = new CMenuOptionChooser(LOCALE_SETTINGS_MENU_POS, &g_settings.menu_pos, MENU_DISP_POS_OPTIONS, MENU_DISP_POS_OPTIONS_COUNT, true, this);
 	mc->setHint("", LOCALE_MENU_HINT_MENU_POS);
@@ -1226,11 +1245,21 @@ void COsdSetup::showOsdChanlistSetup(CMenuWidget *menu_chanlist)
 
 	//show channel logo
 	mc = new CMenuOptionChooser(LOCALE_CHANNELLIST_SHOW_CHANNELLOGO, &g_settings.channellist_show_channellogo, OPTIONS_OFF0_ON1_OPTIONS, OPTIONS_OFF0_ON1_OPTION_COUNT, true);
-	mc->setHint("", LOCALE_MENU_HINT_CHANNELLIST_SHOW_CHANNELLOGO);
+	mc->setHint("", NONEXISTANT_LOCALE);
 	menu_chanlist->addItem(mc);
 
 	//show numbers
 	mc = new CMenuOptionChooser(LOCALE_CHANNELLIST_SHOW_CHANNELNUMBER, &g_settings.channellist_show_numbers, OPTIONS_OFF0_ON1_OPTIONS, OPTIONS_OFF0_ON1_OPTION_COUNT, true);
+	mc->setHint("", LOCALE_MENU_HINT_CHANNELLIST_SHOW_CHANNELNUMBER);
+	menu_chanlist->addItem(mc);
+	
+	//loop over begining and the end CHANNELLIST_LOOP_OPTIONS
+	mc = new CMenuOptionChooser(LOCALE_J00ZEK_CHANNELLIST_LOOP, &g_settings.j00zek_channellist_loop_begining_end, CHANNELLIST_LOOP_OPTIONS, CHANNELLIST_LOOP_OPTIONS_COUNT, true);
+	mc->setHint("", LOCALE_MENU_HINT_CHANNELLIST_SHOW_CHANNELNUMBER);
+	menu_chanlist->addItem(mc);
+
+	//loop over begining and the end CHANNELLIST_NAME_AND_DESCR_OPTION
+	mc = new CMenuOptionChooser(LOCALE_J00ZEK_CHANNELLIST_NAME_DESCR, &g_settings.j00zek_channellist_name_and_descr, CHANNELLIST_NAME_AND_DESCR_OPTION, CHANNELLIST_NAME_AND_DESCR_OPTION_COUNT, true);
 	mc->setHint("", LOCALE_MENU_HINT_CHANNELLIST_SHOW_CHANNELNUMBER);
 	menu_chanlist->addItem(mc);
 }

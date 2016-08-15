@@ -78,8 +78,8 @@
 //#define LIST_FONT_COLOR_SELECTED COL_MENUCONTENT_TEXT
 #define LIST_FONT_COLOR_SELECTED COL_MENUCONTENTSELECTED_TEXT
 
-#define FONT_LIST g_Font[SNeutrinoSettings::FONT_TYPE_EPG_INFO2]
-#define FONT_HEADER_LIST g_Font[SNeutrinoSettings::FONT_TYPE_EPG_INFO1]
+#define FONT_LIST g_Font[SNeutrinoSettings::FONT_TYPE_MOVIEBROWSER_LIST]
+#define FONT_HEADER_LIST g_Font[SNeutrinoSettings::FONT_TYPE_MOVIEBROWSER_DESC]
 #define FONT_TITLE g_Font[SNeutrinoSettings::FONT_TYPE_MENU_TITLE];
 
 //////////////////////////////////////////////////////////////////////

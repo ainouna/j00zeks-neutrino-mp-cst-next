@@ -984,7 +984,7 @@ int CMovieBrowser::exec(CMenuTarget* parent, const std::string & actionKey)
 	{
 		if (m_movieSelectionHandler != NULL)
 		{
-			if (onDelete(true /*cursor only*/))
+			if (onDeleteFile(m_movieSelectionHandler, false /*don't skipAsk*/))
 			{
 				m_doLoadMovies = true;
 				m_doRefresh = true;
@@ -1197,14 +1197,14 @@ int CMovieBrowser::paint(void)
 			&m_cBoxFrameBrowserList);
 	m_pcLastPlay = new CListFrame(&m_playListLines, font, CListFrame::SCROLL | CListFrame::HEADER_LINE | CListFrame::TITLE,
 			&m_cBoxFrameLastPlayList, g_Locale->getText(LOCALE_MOVIEBROWSER_HEAD_PLAYLIST),
-			g_Font[SNeutrinoSettings::FONT_TYPE_EPG_INFO1]);
+			g_Font[SNeutrinoSettings::FONT_TYPE_MOVIEBROWSER_LIST]);
 	m_pcLastRecord = new CListFrame(&m_recordListLines, font, CListFrame::SCROLL | CListFrame::HEADER_LINE | CListFrame::TITLE,
 			&m_cBoxFrameLastRecordList, g_Locale->getText(LOCALE_MOVIEBROWSER_HEAD_RECORDLIST),
-			g_Font[SNeutrinoSettings::FONT_TYPE_EPG_INFO1]);
+			g_Font[SNeutrinoSettings::FONT_TYPE_MOVIEBROWSER_LIST]);
 	m_pcFilter = new CListFrame(&m_FilterLines, font, CListFrame::SCROLL | CListFrame::TITLE,
 			&m_cBoxFrameFilter, g_Locale->getText(LOCALE_MOVIEBROWSER_HEAD_FILTER),
-			g_Font[SNeutrinoSettings::FONT_TYPE_EPG_INFO1]);
-	m_pcInfo = new CTextBox(" ", NULL, CTextBox::TOP | CTextBox::SCROLL, &m_cBoxFrameInfo);
+			g_Font[SNeutrinoSettings::FONT_TYPE_MOVIEBROWSER_LIST]);
+	m_pcInfo = new CTextBox(" ", g_Font[SNeutrinoSettings::FONT_TYPE_MOVIEBROWSER_DESC], CTextBox::TOP | CTextBox::SCROLL, &m_cBoxFrameInfo);
 
 
 	if (m_pcBrowser == NULL || m_pcLastPlay == NULL ||
@@ -1405,7 +1405,7 @@ void CMovieBrowser::refreshMovieInfo(void)
 			int w_logo = ratio*CChannelLogo->getWidth()/100;
 			CChannelLogo->setWidth(min(w_logo, logo_w_max));
 		}
-		
+
 		lx = m_cBoxFrame.iX+m_cBoxFrameTitleRel.iX+m_cBoxFrameTitleRel.iWidth-CChannelLogo->getWidth()-10;
 		ly = m_cBoxFrameTitleRel.iY+m_cBoxFrame.iY+ (m_cBoxFrameTitleRel.iHeight-CChannelLogo->getHeight())/2;
 		CChannelLogo->setXPos(lx - pb_hdd_offset);
@@ -1896,12 +1896,12 @@ bool CMovieBrowser::onButtonPressMainFrame(neutrino_msg_t msg)
 		else
 			result = false;
 	}
-	else if (msg == CRCInput::RC_left)
+	else if (msg == CRCInput::RC_rewind)
 	{
 		if (show_mode != MB_SHOW_YT)
 			onSetGUIWindowPrev();
 	}
-	else if (msg == CRCInput::RC_right)
+	else if (msg == CRCInput::RC_forward)
 	{
 		if (show_mode != MB_SHOW_YT)
 			onSetGUIWindowNext();
@@ -1946,9 +1946,63 @@ bool CMovieBrowser::onButtonPressMainFrame(neutrino_msg_t msg)
 	}
 	else if (msg == CRCInput::RC_spkr)
 	{
-		if (m_movieSelectionHandler != NULL)
+		MI_MOVIE_INFO *movieinfo;
+		movieinfo = NULL;
+		filelist_it = filelist.end();
+		if (getSelectedFiles(filelist, movielist))
+			filelist_it = filelist.begin();
+		if (filelist.empty()) { //just add the m_movieSelectionHandler
+			filelist.push_back(m_movieSelectionHandler->file);
+			movielist.push_back(m_movieSelectionHandler);
+		}
+
+		MI_MOVIE_LIST dellist;
+		MI_MOVIE_LIST::iterator dellist_it;
+		dellist.clear();
+		unsigned int dellist_cnt = 0;
+		bool skipAsk = false;
+		for (filelist_it = filelist.begin(); filelist_it != filelist.end(); ++filelist_it)
 		{
-			onDelete();
+			unsigned int idx = filelist_it - filelist.begin();
+			movieinfo = movielist[idx];
+			TRACE("[mb]-> try to delete %d:%s\n", idx, movieinfo->file.Name.c_str());
+
+			if ((!m_vMovieInfo.empty()) && (movieinfo != NULL)) {
+				bool onDelete = true;
+				skipAsk = false;
+				CRecordInstance* inst = CRecordManager::getInstance()->getRecordInstance(movieinfo->file.Name);
+				if (inst != NULL) {
+					std::string delName = movieinfo->epgTitle;
+					if (delName.empty())
+						delName = movieinfo->file.getFileName();
+					char buf1[1024];
+					snprintf(buf1, sizeof(buf1), g_Locale->getText(LOCALE_MOVIEBROWSER_ASK_REC_TO_DELETE), delName.c_str());
+					if (ShowMsg(LOCALE_RECORDINGMENU_RECORD_IS_RUNNING, buf1,
+							CMessageBox::mbrNo, CMessageBox::mbYes | CMessageBox::mbNo, NULL, 450, 30, false) == CMessageBox::mbrNo)
+						onDelete = false;
+					else {
+						CTimerd::RecordingStopInfo recinfo;
+						recinfo.channel_id = inst->GetChannelId();
+						recinfo.eventID = inst->GetRecordingId();
+						CRecordManager::getInstance()->Stop(&recinfo);
+						g_Timerd->removeTimerEvent(recinfo.eventID);
+						skipAsk = true;
+					}
+				}
+				if (onDelete)
+				{
+					dellist.push_back(*movieinfo);
+					dellist_cnt++;
+				}
+			}
+		}
+		if (!dellist.empty()) {
+			if (dellist_cnt > 1)
+				skipAsk = (ShowMsg(LOCALE_FILEBROWSER_DELETE, LOCALE_MOVIEBROWSER_DELETE_ALL, CMessageBox::mbrNo, CMessageBox:: mbYes | CMessageBox::mbNo) == CMessageBox::mbrYes);
+			for (dellist_it = dellist.begin(); dellist_it != dellist.end(); ++dellist_it)
+				onDeleteFile((MI_MOVIE_INFO *)&(*dellist_it), skipAsk);
+			dellist.clear();
+			loadMovies();
 		}
 	}
 	else if (msg == CRCInput::RC_help || msg == CRCInput::RC_info)
@@ -2111,9 +2165,9 @@ bool CMovieBrowser::onButtonPressLastPlayList(neutrino_msg_t msg)
 		m_pcLastPlay->scrollLineUp(1);
 	else if (msg == CRCInput::RC_down)
 		m_pcLastPlay->scrollLineDown(1);
-	else if (msg == (neutrino_msg_t)g_settings.key_pageup)
+	else if (msg == (neutrino_msg_t)g_settings.key_pageup || (msg == CRCInput::RC_left))
 		m_pcLastPlay->scrollPageUp(1);
-	else if (msg == (neutrino_msg_t)g_settings.key_pagedown)
+	else if (msg == (neutrino_msg_t)g_settings.key_pagedown || (msg == CRCInput::RC_right))
 		m_pcLastPlay->scrollPageDown(1);
 	else if (msg == CRCInput::RC_play)
 		markItem(m_pcLastPlay);
@@ -2135,9 +2189,9 @@ bool CMovieBrowser::onButtonPressLastRecordList(neutrino_msg_t msg)
 		m_pcLastRecord->scrollLineUp(1);
 	else if (msg == CRCInput::RC_down)
 		m_pcLastRecord->scrollLineDown(1);
-	else if (msg == (neutrino_msg_t)g_settings.key_pageup)
+	else if (msg == (neutrino_msg_t)g_settings.key_pageup || (msg == CRCInput::RC_left))
 		m_pcLastRecord->scrollPageUp(1);
-	else if (msg == (neutrino_msg_t)g_settings.key_pagedown)
+	else if (msg == (neutrino_msg_t)g_settings.key_pagedown || (msg == CRCInput::RC_right))
 		m_pcLastRecord->scrollPageDown(1);
 	else if (msg == CRCInput::RC_play)
 		markItem(m_pcLastRecord);
@@ -2163,11 +2217,11 @@ bool CMovieBrowser::onButtonPressFilterList(neutrino_msg_t msg)
 	{
 		m_pcFilter->scrollLineDown(1);
 	}
-	else if (msg == (neutrino_msg_t)g_settings.key_pageup)
+	else if (msg == (neutrino_msg_t)g_settings.key_pageup || (msg == CRCInput::RC_left))
 	{
 		m_pcFilter->scrollPageUp(1);
 	}
-	else if (msg == (neutrino_msg_t)g_settings.key_pagedown)
+	else if (msg == (neutrino_msg_t)g_settings.key_pagedown || (msg == CRCInput::RC_right))
 	{
 		m_pcFilter->scrollPageDown(1);
 	}
@@ -2242,10 +2296,10 @@ bool CMovieBrowser::onDeleteFile(MI_MOVIE_INFO *movieinfo, bool skipAsk)
 	size_t msgMax = 50;
 	std::string msg = g_Locale->getText(LOCALE_FILEBROWSER_DODELETE1);
 	msg += "\n  ";
-	if (!movieinfo->epgTitle.empty()) {
+	if (movieinfo->epgTitle != "") {
 		if ((movieinfo->epgTitle.length() + movieinfo->epgInfo1.length()) <= msgMax) {
 			msg += movieinfo->epgTitle;
-			if (!movieinfo->epgInfo1.empty()) {
+			if (movieinfo->epgInfo1 != "") {
 				msg += " (";
 				msg += movieinfo->epgInfo1;
 				msg += ")";
@@ -2258,7 +2312,7 @@ bool CMovieBrowser::onDeleteFile(MI_MOVIE_INFO *movieinfo, bool skipAsk)
 			}
 			else {
 				msg += movieinfo->epgTitle;
-				if (!movieinfo->epgInfo1.empty()) {
+				if (movieinfo->epgInfo1 != "") {
 					msg += "\n  (";
 					if (movieinfo->epgInfo1.length() > msgMax) {
 						msg = movieinfo->epgInfo1.substr(0, msgMax);
@@ -2281,7 +2335,7 @@ bool CMovieBrowser::onDeleteFile(MI_MOVIE_INFO *movieinfo, bool skipAsk)
 	}
 	msg += "\n";
 	msg += g_Locale->getText(LOCALE_FILEBROWSER_DODELETE2);
-	if ((skipAsk || !movieinfo->delAsk) || (ShowMsg(LOCALE_FILEBROWSER_DELETE, msg, CMessageBox::mbrYes, CMessageBox::mbYes|CMessageBox::mbNo)==CMessageBox::mbrYes))
+	if ((skipAsk) || (ShowMsg(LOCALE_FILEBROWSER_DELETE, msg, CMessageBox::mbrYes, CMessageBox::mbYes|CMessageBox::mbNo)==CMessageBox::mbrYes))
 	{
 		CHintBox * hintBox = new CHintBox(LOCALE_MESSAGEBOX_INFO, g_Locale->getText(LOCALE_MOVIEBROWSER_DELETE_INFO));
 		hintBox->paint();
@@ -2298,17 +2352,9 @@ bool CMovieBrowser::onDeleteFile(MI_MOVIE_INFO *movieinfo, bool skipAsk)
 		delete hintBox;
 		g_RCInput->clearRCMsg();
 
+#if 0
+		m_vMovieInfo.erase((std::vector<MI_MOVIE_INFO>::iterator)movieinfo);
 		TRACE("List size: %d\n", (int)m_vMovieInfo.size());
-		for (std::vector<MI_MOVIE_INFO>::iterator mi_it = m_vMovieInfo.begin(); mi_it != m_vMovieInfo.end(); ++mi_it)
-		{
-			if (
-				   mi_it->file.Name == movieinfo->file.Name
-				&& mi_it->epgTitle == movieinfo->epgTitle
-				&& mi_it->epgInfo1 == movieinfo->epgInfo1
-				&& mi_it->length == movieinfo->length
-			)
-				m_vMovieInfo.erase(mi_it--);
-		}
 
 		updateSerienames();
 		refreshBrowserList();
@@ -2316,72 +2362,8 @@ bool CMovieBrowser::onDeleteFile(MI_MOVIE_INFO *movieinfo, bool skipAsk)
 		refreshLastRecordList();
 		refreshMovieInfo();
 		refresh();
-
+#endif
 		result = true;
-	}
-	return (result);
-}
-
-bool CMovieBrowser::onDelete(bool cursor_only)
-{
-	//TRACE("[onDelete] ");
-	bool result = false;
-
-	MI_MOVIE_INFO *movieinfo;
-	movieinfo = NULL;
-	filelist_it = filelist.end();
-	if (!cursor_only && getSelectedFiles(filelist, movielist))
-		filelist_it = filelist.begin();
-	if (filelist.empty()) { //just add the m_movieSelectionHandler
-		filelist.push_back(m_movieSelectionHandler->file);
-		movielist.push_back(m_movieSelectionHandler);
-	}
-
-	MI_MOVIE_LIST dellist;
-	MI_MOVIE_LIST::iterator dellist_it;
-	dellist.clear();
-	unsigned int dellist_cnt = 0;
-	for (filelist_it = filelist.begin(); filelist_it != filelist.end(); ++filelist_it)
-	{
-		unsigned int idx = filelist_it - filelist.begin();
-		movieinfo = movielist[idx];
-		TRACE("[mb]-> try to delete %d:%s\n", idx, movieinfo->file.Name.c_str());
-
-		if ((!m_vMovieInfo.empty()) && (movieinfo != NULL)) {
-			bool toDelete = true;
-			CRecordInstance* inst = CRecordManager::getInstance()->getRecordInstance(movieinfo->file.Name);
-			if (inst != NULL) {
-				std::string delName = movieinfo->epgTitle;
-				if (delName.empty())
-					delName = movieinfo->file.getFileName();
-				char buf1[1024];
-				snprintf(buf1, sizeof(buf1), g_Locale->getText(LOCALE_MOVIEBROWSER_ASK_REC_TO_DELETE), delName.c_str());
-				if (ShowMsg(LOCALE_RECORDINGMENU_RECORD_IS_RUNNING, buf1,
-						CMessageBox::mbrNo, CMessageBox::mbYes | CMessageBox::mbNo, NULL, 450, 30, false) == CMessageBox::mbrNo)
-					toDelete = false;
-				else {
-					CTimerd::RecordingStopInfo recinfo;
-					recinfo.channel_id = inst->GetChannelId();
-					recinfo.eventID = inst->GetRecordingId();
-					CRecordManager::getInstance()->Stop(&recinfo);
-					g_Timerd->removeTimerEvent(recinfo.eventID);
-					movieinfo->delAsk = false; //delete this file w/o any more question
-				}
-			}
-			if (toDelete)
-			{
-				dellist.push_back(*movieinfo);
-				dellist_cnt++;
-			}
-		}
-	}
-	if (!dellist.empty()) {
-		bool skipAsk = false;
-		if (dellist_cnt > 1)
-			skipAsk = (ShowMsg(LOCALE_FILEBROWSER_DELETE, LOCALE_MOVIEBROWSER_DELETE_ALL, CMessageBox::mbrNo, CMessageBox:: mbYes | CMessageBox::mbNo) == CMessageBox::mbrYes);
-		for (dellist_it = dellist.begin(); dellist_it != dellist.end(); ++dellist_it)
-			result |= onDeleteFile((MI_MOVIE_INFO *)&(*dellist_it), skipAsk);
-		dellist.clear();
 	}
 	return (result);
 }

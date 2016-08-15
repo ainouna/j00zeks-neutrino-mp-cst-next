@@ -12,6 +12,8 @@
 #include <curl/curl.h>
 #include <errno.h>
 #include <cs_api.h>
+#include <ctype.h>
+#include <algorithm>
 
 #ifdef FBV_SUPPORT_GIF
 extern int fh_gif_getsize (const char *, int *, int *, int, int);
@@ -577,20 +579,30 @@ bool CPictureViewer::GetLogoName(const uint64_t& channel_id, const std::string& 
 			(u_int) (channel_id >> 32) & 0xFFFF,
 			(u_int) (channel_id >> 16) & 0xFFFF,
 			(u_int) cc->getSatellitePosition());
+		//std::transform(s2.begin(), s2.end(), s2.begin(), ::tolower);
 		strLogoE2[1] = std::string(fname);
 	}
+	std::string E2channelname = ChannelName;
+	transform(E2channelname.begin(), E2channelname.end(), E2channelname.begin(),(int (*)(int))tolower);
+	E2channelname.erase(remove_if(E2channelname.begin(), E2channelname.end(), ::isspace), E2channelname.end());
+	size_t start_pos;
+	start_pos = E2channelname.find("+"); if(start_pos != std::string::npos) E2channelname.replace(start_pos, 1, "plus");
+	start_pos = E2channelname.find("&"); if(start_pos != std::string::npos) E2channelname.replace(start_pos, 1, "and");
+	start_pos = E2channelname.find("*"); if(start_pos != std::string::npos) E2channelname.replace(start_pos, 1, "star");
+	
+	dprintf(DEBUG_DEBUG,"j00zek channel name %s > piconname (e2 convention) %s\n", ChannelName.c_str(), E2channelname.c_str() );
 	/* first the channel-id, then the channelname */
-	std::string strLogoName[2] = { (std::string)strChanId, ChannelName };
+	std::string strLogoName[3] = { E2channelname, (std::string)strChanId, ChannelName  };
 	/* first png, then jpg, then gif */
 	std::string strLogoExt[3] = { ".png", ".jpg" , ".gif" };
-	std::string dirs[1] = { g_settings.logo_hdd_dir };
+	std::string dirs[2] = { g_settings.logo_hdd_dir, "/usr/local/share/enigma2/picon" };
 
 	std::string tmp;
 
 	for (int k = 0; k < 2; k++) {
 		if (dirs[k].length() < 1)
 			continue;
-		for (int i = 0; i < 2; i++)
+		for (int i = 0; i < 3; i++)
 			for (int j = 0; j < 3; j++) {
 				tmp = dirs[k] + "/" + strLogoName[i] + strLogoExt[j];
 				if (!access(tmp.c_str(), R_OK))

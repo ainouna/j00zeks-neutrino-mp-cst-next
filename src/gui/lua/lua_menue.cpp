@@ -256,6 +256,7 @@ void CLuaMenuKeyboardinput::Init(const char *_name, std::string *_value, int _si
 
 int CLuaMenuKeyboardinput::exec(CMenuTarget* /*parent*/, const std::string & /*actionKey*/)
 {
+        int res = menu_return::RETURN_REPAINT;
 	CKeyboardInput *i;
 	i = new CKeyboardInput((char *)name, value, size, observ, icon, help, help2);
 	i->exec(NULL, "");
@@ -273,9 +274,11 @@ int CLuaMenuKeyboardinput::exec(CMenuTarget* /*parent*/, const std::string & /*a
 			fprintf(stderr, "[CLuaMenuKeyboardinput::%s:%d] error in script: %s\n", __func__, __LINE__, isString ? lua_tostring(L, -1):null);
 			DisplayErrorMessage(isString ? lua_tostring(L, -1):null, "Lua Script Error:");
 		}
+                if (lua_isnumber(L, -1))
+                        res = (int) lua_tonumber(L, -1);
 		lua_pop(L, 2);
 	}
-	return menu_return::RETURN_REPAINT;
+	return res;
 }
 
 int CLuaInstMenu::MenuNew(lua_State *L)

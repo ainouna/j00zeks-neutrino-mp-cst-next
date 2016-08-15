@@ -657,7 +657,7 @@ bool CFileBrowser::exec(const char * const dirname)
 		{
 			loop = false;
 		}
-		else if (msg == CRCInput::RC_left)
+		else if (msg == CRCInput::RC_rewind)
 		{
 #ifdef ENABLE_INTERNETRADIO
 			if (m_Mode == ModeSC)
@@ -753,7 +753,7 @@ bool CFileBrowser::exec(const char * const dirname)
 				paintItem(selected - liststart);
 			}
 		}
-		else if (msg == CRCInput::RC_right)
+		else if (msg == CRCInput::RC_forward)
 		{
 			if (filelist[selected].isDir())
 			{
@@ -770,7 +770,7 @@ bool CFileBrowser::exec(const char * const dirname)
 				}
 			}
 		}
-		else if (msg == (neutrino_msg_t) g_settings.key_pagedown)
+		else if (msg == (neutrino_msg_t) g_settings.key_pagedown || msg == CRCInput::RC_right)
 		{
 			unsigned int last = filelist.size() - 1;
 			if (selected != last && selected + listmaxshow >= filelist.size()) {
@@ -781,7 +781,7 @@ bool CFileBrowser::exec(const char * const dirname)
 			}
 			paint();
 		}
-		else if (msg == (neutrino_msg_t) g_settings.key_pageup)
+		else if (msg == (neutrino_msg_t) g_settings.key_pageup || msg == CRCInput::RC_left)
 		{
 			if (selected && selected < listmaxshow) {
 				selected = 0;
@@ -1020,7 +1020,7 @@ bool CFileBrowser::playlist_manager(CFileList &playlist, unsigned int playing)
 				paintItem(selected - liststart);
 			}
 		}
-		else if (msg == (neutrino_msg_t) g_settings.key_pagedown)
+		else if (msg == (neutrino_msg_t) g_settings.key_pagedown || msg == CRCInput::RC_right)
 		{
 			unsigned int last = filelist.size() - 1;
 			if (selected != last && selected + listmaxshow >= filelist.size()) {
@@ -1031,7 +1031,7 @@ bool CFileBrowser::playlist_manager(CFileList &playlist, unsigned int playing)
 			}
 			paint();
 		}
-		else if (msg == (neutrino_msg_t) g_settings.key_pageup)
+		else if (msg == (neutrino_msg_t) g_settings.key_pageup || msg == CRCInput::RC_left)
 		{
 			if (selected && selected < listmaxshow) {
 				selected = 0;
@@ -1139,7 +1139,7 @@ void CFileBrowser::addRecursiveDir(CFileList * re_filelist, std::string rpath, b
 	{
 		n = tmplist.size();
 		if(progress)
-			progress->showStatusMessageUTF(FILESYSTEM_ENCODING_TO_UTF8_STRING(rpath));
+			progress->showStatusMessageUTF(rpath);
 
 		for (int i = 0; i < n; i++)
 		{
@@ -1215,7 +1215,7 @@ void CFileBrowser::paintItem(unsigned int pos)
 	if ( !actual_file->Name.empty() )
 	{
 		if (curr == selected)
-			CVFD::getInstance()->showMenuText(0, FILESYSTEM_ENCODING_TO_UTF8_STRING(actual_file->getFileName()).c_str(), -1, true); // UTF-8
+			CVFD::getInstance()->showMenuText(0, actual_file->getFileName().c_str(), -1, true); // UTF-8
 
 		switch(actual_file->getType())
 		{
@@ -1251,7 +1251,7 @@ void CFileBrowser::paintItem(unsigned int pos)
 		}
 		frameBuffer->paintIcon(fileicon, x+5 , ypos + (fheight-16) / 2 );
 
-		fnt_item->RenderString(x + 35, ypos + fheight, colwidth1 - 10 , FILESYSTEM_ENCODING_TO_UTF8_STRING(actual_file->getFileName()), color);
+		fnt_item->RenderString(x + 35, ypos + fheight, colwidth1 - 10 , actual_file->getFileName(), color);
 
 		if( S_ISREG(actual_file->Mode) )
 		{
@@ -1322,10 +1322,10 @@ void CFileBrowser::paintHead()
 	int l;
 #ifdef ENABLE_INTERNETRADIO
 	if(m_Mode == ModeSC)
-		l = asprintf(&l_name, "%s %s", g_Locale->getText(LOCALE_AUDIOPLAYER_ADD_SC), FILESYSTEM_ENCODING_TO_UTF8_STRING(name).c_str());
+		l = asprintf(&l_name, "%s %s", g_Locale->getText(LOCALE_AUDIOPLAYER_ADD_SC), name.c_str());
 	else
 #endif
-		l = asprintf(&l_name, "%s %s", g_Locale->getText(playlistmode ? LOCALE_FILEBROWSER_PM : LOCALE_FILEBROWSER_HEAD), FILESYSTEM_ENCODING_TO_UTF8_STRING(name).c_str());
+		l = asprintf(&l_name, "%s %s", g_Locale->getText(playlistmode ? LOCALE_FILEBROWSER_PM : LOCALE_FILEBROWSER_HEAD), name.c_str());
 
 	if (l < 1) /* at least 1 for the " " space */
 	{
@@ -1336,7 +1336,7 @@ void CFileBrowser::paintHead()
 	/* too long? Leave out the "Filebrowser" or "Shoutcast" prefix
 	 * the allocated space is sufficient since it is surely shorter than before */
 	if (fnt_title->getRenderWidth(l_name) > width - 11)
-		l = sprintf(l_name, "%s", FILESYSTEM_ENCODING_TO_UTF8_STRING(name).c_str());
+		l = sprintf(l_name, "%s", name.c_str());
 	if (l_name[l - 1] == '/')
 		l_name[--l] = '\0';
 

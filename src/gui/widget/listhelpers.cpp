@@ -41,6 +41,10 @@ static int upDownKey(int size, neutrino_msg_t msg, int lines, int sel)
 		step = -lines;
 	else if (key == g_settings.key_pagedown)
 		step = lines;
+	else if (key == g_settings.key_chlist_pageup)  
+		step = -lines;  
+	else if (key == g_settings.key_chlist_pagedown)  
+		step = lines;  
 	else if (msg == CRCInput::RC_up)
 		step = -1;
 	else if (msg == CRCInput::RC_down)
@@ -52,13 +56,17 @@ static int upDownKey(int size, neutrino_msg_t msg, int lines, int sel)
 	// printf("CListHelpers:%s: key 0x%04lx lines %d size %d sel %d\n", __func__, msg, lines, size, sel);
 	int new_sel = sel + step;
 	if (new_sel < 0) {
-		if (sel != 0 && step != 1)
+		if (!g_settings.j00zek_channellist_loop_begining_end)
+			new_sel = 0;
+		else if (sel != 0 && step != 1)
 			new_sel = 0;
 		else
 			new_sel = size - 1;
 	}
 	else if (new_sel > size - 1) {
-		if (sel != size - 1)
+		if (!g_settings.j00zek_channellist_loop_begining_end)
+			new_sel =  size - 1;
+		else if (sel != size - 1)
 			new_sel = size - 1;
 		else
 			new_sel = 0;

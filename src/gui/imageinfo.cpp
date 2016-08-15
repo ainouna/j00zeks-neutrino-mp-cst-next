@@ -67,7 +67,7 @@ void CImageInfo::Init(void)
 	
 	license_txt	= "";
 	v_info.clear();
-	config.loadConfig("/.version");
+	config.loadConfig("/usr/ntrino/version");
 }
 
 CImageInfo::~CImageInfo()
@@ -247,6 +247,7 @@ void CImageInfo::InitInfoData()
 {
 	v_info.clear();
 
+#if 0 //j00zTrino has different versioning
 #ifdef BUILT_DATE
 	const char * builddate = BUILT_DATE;
 #else
@@ -266,19 +267,23 @@ void CImageInfo::InitInfoData()
 	version_string += " (";
 	version_string += versionInfo.getDate();
 	version_string += ")";
+	
+#endif
 #endif
 
 	struct utsname uts_info;
 
 	image_info_t imagename 	= {LOCALE_IMAGEINFO_IMAGE,	config.getString("imagename", "Neutrino-HD")};
 	v_info.push_back(imagename);
-	image_info_t version	= {LOCALE_IMAGEINFO_VERSION,	version_string};
+	image_info_t version	= {LOCALE_IMAGEINFO_VERSION,	config.getString("version", "U000000000000000").c_str()};
 	v_info.push_back(version);
+#if 0
 #ifdef VCS
 	image_info_t vcs	= {LOCALE_IMAGEINFO_VCS,	VCS};
 	v_info.push_back(vcs);
 #endif
-	image_info_t date	= {LOCALE_IMAGEINFO_DATE,	builddate};
+#endif
+	image_info_t date	= {LOCALE_IMAGEINFO_DATE,	config.getString("builddate", "n/a").c_str()};
 	v_info.push_back(date);
 	if (uname(&uts_info) == 0) {
 		image_info_t kernel	= {LOCALE_IMAGEINFO_KERNEL,	uts_info.release};

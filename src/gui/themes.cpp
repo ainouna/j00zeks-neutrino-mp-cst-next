@@ -207,6 +207,9 @@ void CThemes::readFile(const char *themename)
 	if(themefile.loadConfig(themename))
 	{
 		getTheme(themefile);
+		std::string tm = themename;
+		size_t f = tm.find("/themes/");
+		g_settings.j00zek_skin_theme = tm.replace(f, std::string("/themes/").length(), "/skins/");
 
 		notifier = new CColorSetupNotifier;
 		notifier->changeNotify(NONEXISTANT_LOCALE, NULL);

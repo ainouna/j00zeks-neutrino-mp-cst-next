@@ -32,7 +32,11 @@ class CLuaInstMisc
 {
 	public:
 		enum {
-			POSTMSG_STANDBY_ON = 1
+			POSTMSG_STANDBY_ON = 1,
+			POSTMSG_REBOOT     = 2,
+			POSTMSG_SHUTDOWN   = 3,
+			POSTMSG_LOCK_RC    = 4,
+			POSTMSG_UNLOCK_RC  = 5
 		};
 
 		CLuaInstMisc() {};

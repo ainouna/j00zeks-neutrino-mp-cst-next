@@ -99,8 +99,8 @@ extern cVideo * videoDecoder;
 
 // check if files to be added are already in the playlist
 #define AUDIOPLAYER_CHECK_FOR_DUPLICATES
-#define AUDIOPLAYER_START_SCRIPT CONFIGDIR "/audioplayer.start"
-#define AUDIOPLAYER_END_SCRIPT CONFIGDIR "/audioplayer.end"
+#define AUDIOPLAYER_START_SCRIPT "/usr/ntrino/scripts/audioplayer.start"
+#define AUDIOPLAYER_END_SCRIPT   "/usr/ntrino/scripts/audioplayer.end"
 #define DEFAULT_RADIOSTATIONS_XMLFILE CONFIGDIR "/radio-stations.xml"
 
 const char RADIO_STATION_XML_FILE[] = {DEFAULT_RADIOSTATIONS_XMLFILE};
@@ -288,7 +288,7 @@ int CAudioPlayerGui::exec(CMenuTarget* parent, const std::string &actionKey)
 	// set zapit in lock mode
 	CNeutrinoApp::getInstance()->stopPlayBack(true);
 
-	m_frameBuffer->showFrame("mp3.jpg");
+	m_frameBuffer->showFrame("mp3.m2v");
 
 	// tell neutrino we're in audio mode
 	m_LastMode = CNeutrinoApp::getInstance()->getMode();
@@ -390,7 +390,7 @@ int CAudioPlayerGui::show()
 				screensaver(false);
 
 				m_frameBuffer->stopFrame();
-				m_frameBuffer->showFrame("mp3.jpg");
+				m_frameBuffer->showFrame("mp3.m2v");
 				paint();
 
 				if (msg <= CRCInput::RC_MaxRC) {
@@ -727,7 +727,7 @@ int CAudioPlayerGui::show()
 			pictureviewer = false;
 			screensaver(false);
 			videoDecoder->setBlank(true);
-			m_frameBuffer->showFrame("mp3.jpg");
+			m_frameBuffer->showFrame("mp3.m2v");
 			CVFD::getInstance()->setMode(CVFD::MODE_AUDIO);
 			paintLCD();
 			update = true;

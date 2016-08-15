@@ -30,10 +30,11 @@ extern int debug;
 enum
 {
 	DEBUG_NORMAL	, // 0
-	DEBUG_INFO	, // 1
-	DEBUG_DEBUG	, // 2
+	J00ZEK_DBG	, // 1
+	DEBUG_INFO	, // 2
+	DEBUG_DEBUG	, // 3
 
-	DEBUG_MODES	  // 3 count of available modes
+	DEBUG_MODES	  // 4 count of available modes
 };
 
 
@@ -46,5 +47,10 @@ void setDebugLevel( int level );
 	} while(0)
 #define dperror(str) {perror("[neutrino] " str);}
 
+#define j00zekDBG(debuglevel, fmt, args...) \
+	do { \
+		if (debug >= debuglevel) \
+			printf( "[j00zTrino] " fmt, ## args); \
+	} while(0)
 
 #endif

@@ -149,6 +149,9 @@ struct SNeutrinoSettings
 	int video_43mode;
 
 #if HAVE_SPARK_HARDWARE || HAVE_DUCKBOX_HARDWARE
+	int j00zek_channellist_loop_begining_end;
+	int j00zek_channellist_name_and_descr;
+	std::string j00zek_skin_theme;
 	int hdmi_mode;
 	int psi_contrast;
 	int psi_saturation;
@@ -511,11 +514,13 @@ struct SNeutrinoSettings
 
 	int key_pageup;
 	int key_pagedown;
-
+	
 	int key_channelList_cancel;
 	int key_channelList_sort;
 	int key_channelList_addrecord;
 	int key_channelList_addremind;
+	int key_chlist_pageup;
+	int key_chlist_pagedown;
 
 	int key_playbutton;
 	int key_quickzap_up;
@@ -707,6 +712,7 @@ struct SNeutrinoSettings
 		FONT_TYPE_MENU = 0,
 		FONT_TYPE_MENU_TITLE,
 		FONT_TYPE_MENU_INFO,
+		FONT_TYPE_MENU_HINT,
 		FONT_TYPE_EPG_TITLE,
 		FONT_TYPE_EPG_INFO1,
 		FONT_TYPE_EPG_INFO2,
@@ -725,9 +731,10 @@ struct SNeutrinoSettings
 		FONT_TYPE_INFOBAR_CHANNAME,
 		FONT_TYPE_INFOBAR_INFO,
 		FONT_TYPE_INFOBAR_SMALL,
-		FONT_TYPE_FILEBROWSER_ITEM,
-		FONT_TYPE_MENU_HINT,
 		FONT_TYPE_SUBTITLES,
+		FONT_TYPE_FILEBROWSER_ITEM,
+		FONT_TYPE_MOVIEBROWSER_LIST,
+		FONT_TYPE_MOVIEBROWSER_DESC,
 		FONT_TYPE_COUNT
 	};
 
@@ -760,6 +767,7 @@ struct SNeutrinoSettings
 	int lcd_setting_dim_brightness;
 #if HAVE_SPARK_HARDWARE || HAVE_DUCKBOX_HARDWARE
 	int lcd_vfd_scroll;
+	int lcd_vfd_recicon;
 #endif
 	int led_tv_mode;
 	int led_standby_mode;

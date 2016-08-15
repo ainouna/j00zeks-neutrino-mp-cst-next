@@ -350,6 +350,10 @@ static void set_lua_variables(lua_State *L)
 	table_key post_msg[] =
 	{
 		{ "STANDBY_ON",		(lua_Integer)CLuaInstMisc::POSTMSG_STANDBY_ON },
+		{ "REBOOT",		(lua_Integer)CLuaInstMisc::POSTMSG_REBOOT },
+		{ "SHUTDOWN",		(lua_Integer)CLuaInstMisc::POSTMSG_SHUTDOWN },
+		{ "LOCK_RC",		(lua_Integer)CLuaInstMisc::POSTMSG_LOCK_RC },
+		{ "UNLOCK_RC",		(lua_Integer)CLuaInstMisc::POSTMSG_UNLOCK_RC },
 		{ NULL, 0 }
 	};
 

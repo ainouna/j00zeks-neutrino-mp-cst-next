@@ -33,6 +33,8 @@
 #include <config.h>
 #endif
 
+#include <stdlib.h>
+
 #include <sstream>
 #include <fstream>
 #include <iostream>
@@ -107,12 +109,34 @@ void CPlugins::scanDir(const char *dir)
 
 	for (int i = 0; i < number_of_files; i++)
 	{
-		std::string filename(namelist[i]->d_name);
+		std::string dirItem(namelist[i]->d_name);
+		std::string fullPath = dir;
+		fullPath += "/" + dirItem;
+		std::string filename;
+		struct stat info;
+		int pos;
+		
 		free(namelist[i]);
+		
+		if(stat( fullPath.c_str(), &info ) != 0)
+			filename = dirItem;
+		else if(info.st_mode & S_IFDIR) {
+			//printf ("j00zTrino found plugin dir: %s\n", dirItem.c_str());
+			filename = fullPath + "/" + dirItem + ".cfg";
+			printf("filename: %s\n",filename.c_str());
+			if (stat(filename.c_str(), &info) != 0)
+				filename = "dummy";
+			else
+				filename = dirItem + "/" + dirItem + ".cfg";
+			  
+		} else
+			filename = dirItem;
 
-		int pos = filename.find(".cfg");
+		pos = filename.find(".cfg");
+		
 		if (pos > -1)
 		{
+			//printf ("j00zTrino found plugins: %s\n", filename.c_str());
 			plugin new_plugin;
 			new_plugin.filename = filename.substr(0, pos);
 			fname = dir;

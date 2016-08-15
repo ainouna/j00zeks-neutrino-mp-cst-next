@@ -838,15 +838,15 @@ void* CMoviePlayerGui::bgPlayThread(void *arg)
 
 	bool started = mp->StartWebtv();
 	printf("%s: started: %d\n", __func__, started);fflush(stdout);
-	bool chidused = false;
+	bool chidused = false; 
 
 	mutex.lock();
 	if (!webtv_started)
 		started = false;
 	else if (!started){
 		g_RCInput->postMsg(NeutrinoMessages::EVT_ZAP_FAILED, (neutrino_msg_data_t) chid);
-		chidused = true;
-	}
+		chidused = true;  
+	}  
 	webtv_started = started;
 	mutex.unlock();
 
@@ -862,7 +862,7 @@ void* CMoviePlayerGui::bgPlayThread(void *arg)
 			if (eof > 5) {
 				printf("CMoviePlayerGui::bgPlayThread: playback stopped, try to rezap...\n");
 				g_RCInput->postMsg(NeutrinoMessages::EVT_WEBTV_ZAP_COMPLETE, (neutrino_msg_data_t) chid);
-				chidused = true;
+				chidused = true; 
 				break;
 			}
 			pos = mp->position;
@@ -878,8 +878,8 @@ void* CMoviePlayerGui::bgPlayThread(void *arg)
 	}
 	printf("%s: play end...\n", __func__);fflush(stdout);
 	mp->PlayFileEnd();
-	if(!chidused)
-		delete [] chid;
+	if(!chidused)  
+	delete [] chid;
 
 	pthread_exit(NULL);
 }

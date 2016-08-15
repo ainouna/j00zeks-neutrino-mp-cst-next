@@ -56,6 +56,8 @@ class CKeybindSetup : public CMenuTarget, public CChangeObserver
 			NKEY_SORT,
 			NKEY_ADD_RECORD,
 			NKEY_ADD_REMIND,
+			NKEY_CHLIST_UP,
+			NKEY_CHLIST_DOWN,
 			NKEY_BOUQUET_UP,
 			NKEY_BOUQUET_DOWN,
 			NKEY_CURRENT_TRANSPONDER,

@@ -334,6 +334,18 @@ int CLuaInstMisc::postMsg(lua_State *L)
 		case POSTMSG_STANDBY_ON:
 			post_msg = NeutrinoMessages::STANDBY_ON;
 			break;
+		case POSTMSG_REBOOT:
+			post_msg = NeutrinoMessages::REBOOT;
+			break;
+		case POSTMSG_SHUTDOWN:
+			post_msg = NeutrinoMessages::SHUTDOWN; //To check it seems reboot is initiated
+			break;
+		case POSTMSG_LOCK_RC:
+			post_msg = NeutrinoMessages::LOCK_RC;
+			break;
+		case POSTMSG_UNLOCK_RC:
+			post_msg = NeutrinoMessages::UNLOCK_RC;
+			break;
 		default:
 			return 0;
 	}

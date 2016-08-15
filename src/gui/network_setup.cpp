@@ -357,8 +357,10 @@ int CNetworkSetup::showNetworkSetup()
 	CMenuWidget networkmounts(LOCALE_MAINSETTINGS_NETWORK, NEUTRINO_ICON_SETTINGS, width, MN_WIDGET_ID_NETWORKSETUP_MOUNTS);
 #endif
 	CProxySetup proxy(LOCALE_MAINSETTINGS_NETWORK);
-	CNetworkServiceSetup services;
 
+#if 0  // j00zek: network sevices setup is useless in sh4 env
+	CNetworkServiceSetup services;
+#endif
 	//ntp submenu
 	sectionsdConfigNotifier = new CSectionsdConfigNotifier;
 	mf = new CMenuForwarder(LOCALE_NETWORKMENU_NTPTITLE, true, NULL, &ntp, NULL, CRCInput::RC_yellow);
@@ -380,11 +382,12 @@ int CNetworkSetup::showNetworkSetup()
 	mf->setHint("", LOCALE_MENU_HINT_NET_PROXY);
 	networkSettings->addItem(mf);
 
+#if 0	// j00zek: network sevices setup is useless in sh4 env
 	//services
 	mf = new CMenuForwarder(LOCALE_NETWORKMENU_SERVICES, true, NULL, &services, NULL, CRCInput::RC_1);
 	mf->setHint("", LOCALE_MENU_HINT_NET_SERVICES);
 	networkSettings->addItem(mf);
-
+#endif
 	int ret = 0;
 	while(true) {
 		int res = menu_return::RETURN_EXIT;
@@ -721,9 +724,9 @@ void CNetworkSetup::testNetworkSettings()
 	std::string wiki_URL = "wiki.neutrino-hd.de";
 	std::string wiki_IP = "89.31.143.1";
 
-	//get www-domain testsite from /.version
+	//get www-domain testsite from /usr/ntrino/version
 	CConfigFile config('\t');
-	config.loadConfig("/.version");
+	config.loadConfig("/usr/ntrino/version");
 	testsite = config.getString("homepage",defaultsite);
 	testsite.replace( 0, testsite.find("www",0), "" );
 
