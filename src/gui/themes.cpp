@@ -277,6 +277,14 @@ void CThemes::setTheme(CConfigFile &configfile)
 	configfile.setInt32( "menu_Content_inactive_Text_red", t.menu_Content_inactive_Text_red );
 	configfile.setInt32( "menu_Content_inactive_Text_green", t.menu_Content_inactive_Text_green );
 	configfile.setInt32( "menu_Content_inactive_Text_blue", t.menu_Content_inactive_Text_blue );
+	configfile.setInt32( "menu_Foot_alpha", t.menu_Foot_alpha );
+	configfile.setInt32( "menu_Foot_red", t.menu_Foot_red );
+	configfile.setInt32( "menu_Foot_green", t.menu_Foot_green );
+	configfile.setInt32( "menu_Foot_blue", t.menu_Foot_blue );
+	configfile.setInt32( "menu_Foot_Text_alpha", t.menu_Foot_Text_alpha );
+	configfile.setInt32( "menu_Foot_Text_red", t.menu_Foot_Text_red );
+	configfile.setInt32( "menu_Foot_Text_green", t.menu_Foot_Text_green );
+	configfile.setInt32( "menu_Foot_Text_blue", t.menu_Foot_Text_blue );
 
 	configfile.setInt32( "menu_Hint_gradient" , t.menu_Hint_gradient);
 	configfile.setInt32( "menu_Hint_gradient_direction" , t.menu_Hint_gradient_direction);
@@ -355,6 +363,14 @@ void CThemes::getTheme(CConfigFile &configfile)
 	t.menu_Content_inactive_Text_red = configfile.getInt32( "menu_Content_inactive_Text_red", 55 );
 	t.menu_Content_inactive_Text_green = configfile.getInt32( "menu_Content_inactive_Text_green", 70 );
 	t.menu_Content_inactive_Text_blue = configfile.getInt32( "menu_Content_inactive_Text_blue", 85 );
+	t.menu_Foot_alpha = configfile.getInt32( "menu_Foot_alpha", 0x08 );
+	t.menu_Foot_red = configfile.getInt32( "menu_Foot_red", 0x10 );
+	t.menu_Foot_green = configfile.getInt32( "menu_Foot_green", 0x10 );
+	t.menu_Foot_blue = configfile.getInt32( "menu_Foot_blue", 0x10 );
+	t.menu_Foot_Text_alpha = configfile.getInt32( "menu_Foot_Text_alpha", 0x00 );
+	t.menu_Foot_Text_red = configfile.getInt32( "menu_Foot_Text_red", 0x28 );
+	t.menu_Foot_Text_green = configfile.getInt32( "menu_Foot_Text_green", 0x28 );
+	t.menu_Foot_Text_blue = configfile.getInt32( "menu_Foot_Text_blue", 0x28 );
 
 	t.menu_Hint_gradient = configfile.getInt32( "menu_Hint_gradient", CC_COLGRAD_OFF);
 	t.menu_Hint_gradient_direction = configfile.getInt32( "menu_Hint_gradient_direction", CFrameBuffer::gradientVertical);

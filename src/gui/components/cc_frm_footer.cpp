@@ -25,7 +25,6 @@
 #include <config.h>
 #endif
 
-#include <global.h>
 #include <neutrino.h>
 #include "cc_frm_footer.h"
 #include <system/debug.h>
@@ -69,7 +68,7 @@ void CComponentsFooter::initVarFooter(	const int& x_pos, const int& y_pos, const
 	width 	= w == 0 ? frameBuffer->getScreenWidth(true) : w;
 
 	//init footer height
-	cch_font 	= g_Font[SNeutrinoSettings::FONT_TYPE_INFOBAR_SMALL];
+	cch_font 	= g_Font[SNeutrinoSettings::FONT_TYPE_MENU_FOOT];
 	height 		= max(h, cch_font->getHeight());
 
 	shadow		= shadow_mode;
@@ -146,7 +145,7 @@ void CComponentsFooter::setButtonLabels(const struct button_label_s * const cont
 		btn->setButtonFont(ccf_btn_font);
 		btn->doPaintBg(btn_contour);
 		btn->enableFrame(btn_contour);
-		btn->setButtonTextColor(COL_INFOBAR_SHADOW_TEXT);
+		btn->setButtonTextColor(COL_MENUFOOT_TEXT);
 		btn->setButtonEventMsg(content[i].btn_msg);
 		btn->setButtonResult(content[i].btn_result);
 		btn->setButtonAlias(content[i].btn_alias);

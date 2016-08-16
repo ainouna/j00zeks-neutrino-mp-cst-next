@@ -73,6 +73,8 @@ CUpnpBrowserGui::CUpnpBrowserGui()
 
 	Init();
 
+	font_item = SNeutrinoSettings::FONT_TYPE_MENU;
+
 	dline = NULL;
 	image = NULL;
 
@@ -87,34 +89,33 @@ void CUpnpBrowserGui::Init()
 	topbox.setCorner(RADIUS_LARGE);
 	topbox.setColorAll(COL_MENUCONTENT_PLUS_6, COL_MENUHEAD_PLUS_0, COL_MENUCONTENTDARK_PLUS_0, COL_MENUHEAD_TEXT);
 	topbox.setTextFont(g_Font[SNeutrinoSettings::FONT_TYPE_MENU_INFO]);
-	topbox.enableColBodyGradient(g_settings.theme.menu_Head_gradient, COL_INFOBAR_SHADOW_PLUS_1, g_settings.theme.menu_Head_gradient_direction);
+	topbox.enableColBodyGradient(g_settings.theme.menu_Head_gradient, COL_SHADOW_PLUS_0, g_settings.theme.menu_Head_gradient_direction);
 
 	ibox.enableFrame(true, 2);
 	ibox.setCorner(RADIUS_LARGE);
 	ibox.setColorAll(topbox.getColorFrame(), COL_MENUCONTENTDARK_PLUS_0);
 	ibox.setTextFont(g_Font[SNeutrinoSettings::FONT_TYPE_EVENTLIST_ITEMLARGE]);
-	ibox.enableColBodyGradient(g_settings.theme.menu_Hint_gradient, COL_INFOBAR_SHADOW_PLUS_1, g_settings.theme.menu_Hint_gradient_direction);
+	ibox.enableColBodyGradient(g_settings.theme.menu_Hint_gradient, COL_SHADOW_PLUS_0, g_settings.theme.menu_Hint_gradient_direction);
 
 	timebox.enableFrame(true, 2);
 	timebox.setCorner(RADIUS_LARGE);
 	timebox.setColorAll(ibox.getColorFrame(), ibox.getColorBody());
 	timebox.setTextFont(g_Font[SNeutrinoSettings::FONT_TYPE_EVENTLIST_ITEMLARGE]);
-	timebox.enableColBodyGradient(g_settings.theme.menu_Hint_gradient, COL_INFOBAR_SHADOW_PLUS_1, g_settings.theme.menu_Hint_gradient_direction);
+	timebox.enableColBodyGradient(g_settings.theme.menu_Hint_gradient, COL_SHADOW_PLUS_0, g_settings.theme.menu_Hint_gradient_direction);
 
 	m_width = m_frameBuffer->getScreenWidthRel();
 	m_height = m_frameBuffer->getScreenHeightRel();
 
-	m_sheight = g_Font[SNeutrinoSettings::FONT_TYPE_INFOBAR_SMALL]->getHeight();
+	m_iheight = g_Font[SNeutrinoSettings::FONT_TYPE_MENU_INFO]->getHeight();
 	m_theight = g_Font[SNeutrinoSettings::FONT_TYPE_MENU_TITLE]->getHeight();
 	m_buttonHeight = m_theight;
 	m_mheight = g_Font[SNeutrinoSettings::FONT_TYPE_MENU]->getHeight();
-	m_fheight = g_Font[SNeutrinoSettings::FONT_TYPE_FILEBROWSER_ITEM]->getHeight();
-	m_title_height = m_mheight*2 + 20 + m_sheight + 4;
+	m_fheight = g_Font[font_item]->getHeight();
+	m_title_height = m_iheight*3 + 20; // 3 lines + offset
 	m_info_height = m_mheight*2;
 	m_listmaxshow = (m_height - m_info_height - m_title_height - m_theight - 2*m_buttonHeight) / (m_fheight);
 	m_height = m_theight + m_info_height + m_title_height + 2*m_buttonHeight + m_listmaxshow * m_fheight; // recalc height
 
-	footer.setColorBody(COL_INFOBAR_SHADOW_PLUS_1);
 	footer.setHeight(m_buttonHeight);
 
 	m_x=getScreenStartX(m_width);
@@ -942,10 +943,10 @@ void CUpnpBrowserGui::paintDevice(unsigned int _pos)
 
 	std::string name = m_devices[pos].friendlyname;
 
-	int w = g_Font[SNeutrinoSettings::FONT_TYPE_FILEBROWSER_ITEM]->getRenderWidth(name) + 5;
-	g_Font[SNeutrinoSettings::FONT_TYPE_FILEBROWSER_ITEM]->RenderString(m_x + 10, ypos + m_fheight, m_width - 30 - w,
+	int w = g_Font[font_item]->getRenderWidth(name) + 5;
+	g_Font[font_item]->RenderString(m_x + 10, ypos + m_fheight, m_width - 30 - w,
 			num, color, m_fheight);
-	g_Font[SNeutrinoSettings::FONT_TYPE_FILEBROWSER_ITEM]->RenderString(m_x + m_width - 15 - w, ypos + m_fheight,
+	g_Font[font_item]->RenderString(m_x + m_width - 15 - w, ypos + m_fheight,
 			w, name, color, m_fheight);
 }
 
@@ -981,7 +982,7 @@ void CUpnpBrowserGui::paintDevices()
 
 	// Foot
 	top = m_y + (m_height - m_info_height - 2 * m_buttonHeight);
-	footer.paintButtons(m_x, top, m_width, m_buttonHeight, 1, &RescanButton, m_width/2, 0, g_Font[SNeutrinoSettings::FONT_TYPE_INFOBAR_SMALL]);
+	footer.paintButtons(m_x, top, m_width, m_buttonHeight, 1, &RescanButton, m_width/2);
 
 	paintItem2DetailsLine (-1); // clear it
 }
@@ -1043,7 +1044,7 @@ void CUpnpBrowserGui::paintItem(std::vector<UPnPEntry> *entries, unsigned int po
 
 	std::string name = entry->title;
 	char tmp_time[] = "00:00:00.0";
-	int w = g_Font[SNeutrinoSettings::FONT_TYPE_FILEBROWSER_ITEM]->getRenderWidth(tmp_time);
+	int w = g_Font[font_item]->getRenderWidth(tmp_time);
 
 	int icon_w = 0;
 	int icon_h = 0;
@@ -1054,8 +1055,8 @@ void CUpnpBrowserGui::paintItem(std::vector<UPnPEntry> *entries, unsigned int po
 		icon_o = icon_w + 10;
 		m_frameBuffer->paintIcon(fileicon, m_x + 10, ypos + (m_fheight - icon_h) / 2);
 	}
-	g_Font[SNeutrinoSettings::FONT_TYPE_FILEBROWSER_ITEM]->RenderString(m_x + m_width - 15 - 10 - w, ypos + m_fheight, w, info, color, m_fheight);
-	g_Font[SNeutrinoSettings::FONT_TYPE_FILEBROWSER_ITEM]->RenderString(m_x + 10 + icon_o, ypos + m_fheight, m_width - icon_o - 15 - 2*10 - w, name, color, m_fheight);
+	g_Font[font_item]->RenderString(m_x + m_width - 15 - 10 - w, ypos + m_fheight, w, info, color, m_fheight);
+	g_Font[font_item]->RenderString(m_x + 10 + icon_o, ypos + m_fheight, m_width - icon_o - 15 - 2*10 - w, name, color, m_fheight);
 }
 
 void CUpnpBrowserGui::paintItemInfo(UPnPEntry *entry)
@@ -1159,7 +1160,7 @@ printf("CUpnpBrowserGui::paintItem:s selected %d max %d offset %d\n", selected, 
 	// Foot buttons
 	top = m_y + (m_height - m_info_height - 2 * m_buttonHeight);
 	size_t numbuttons = sizeof(BrowseButtons)/sizeof(BrowseButtons[0]);
-	footer.paintButtons(m_x, top, m_width, m_buttonHeight, numbuttons, BrowseButtons, m_width/numbuttons, 0, g_Font[SNeutrinoSettings::FONT_TYPE_INFOBAR_SMALL]); 
+	footer.paintButtons(m_x, top, m_width, m_buttonHeight, numbuttons, BrowseButtons, m_width/numbuttons);
 }
 
 void CUpnpBrowserGui::paintDetails(UPnPEntry *entry, bool use_playing)
