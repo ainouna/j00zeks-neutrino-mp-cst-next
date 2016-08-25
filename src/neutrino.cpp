@@ -114,6 +114,8 @@
 
 #if HAVE_SPARK_HARDWARE || HAVE_DUCKBOX_HARDWARE
 #include "gui/screensetup.h"
+int j00zekPIPenabled=1;
+char j00zekBoxType[32]={ };
 #endif
 #include <system/set_threadname.h>
 #include <system/ytcache.h>
@@ -1946,9 +1948,19 @@ void CNeutrinoApp::CmdParser(int argc, char **argv)
 			if (x < argc)
 				x++;
 		}
+		else if ((!strcmp(argv[x], "--disablePIP"))) {
+			j00zekPIPenabled = 0;
+			dprintf(DEBUG_NORMAL, "j00zekPIPenabled: %d\n", j00zekPIPenabled);
+		}
+		else if ( !strcmp(argv[x], "--boxtype") && (x+1 < argc)) {
+			//j00zekBoxType = argv[x+ 1];
+			strcpy(j00zekBoxType, argv[x+ 1]);
+			dprintf(DEBUG_NORMAL, "j00zekBoxType: %s\n", j00zekBoxType);
+			x++;
+		}
 		else {
 			dprintf(DEBUG_NORMAL, "Usage: neutrino [-u | --enable-update] "
-					      "[-v | --verbose 0..3]\n");
+					      "[-v | --verbose 0..3] [-xd] [-sd] [-zd] [--disablePIP] [--boxtype <name>]\n");
 #if HAVE_SPARK_HARDWARE || HAVE_DUCKBOX_HARDWARE
 			exit(CNeutrinoApp::REBOOT);
 #else
