@@ -524,7 +524,7 @@ struct SNeutrinoSettings
 
 	int key_pageup;
 	int key_pagedown;
-	
+
 	int key_channelList_cancel;
 	int key_channelList_sort;
 	int key_channelList_addrecord;
@@ -741,8 +741,9 @@ struct SNeutrinoSettings
 		FONT_TYPE_INFOBAR_CHANNAME,
 		FONT_TYPE_INFOBAR_INFO,
 		FONT_TYPE_INFOBAR_SMALL,
-		FONT_TYPE_SUBTITLES,
 		FONT_TYPE_FILEBROWSER_ITEM,
+		FONT_TYPE_MENU_HINT,
+		FONT_TYPE_SUBTITLES,
 		FONT_TYPE_MOVIEBROWSER_LIST,
 		FONT_TYPE_MOVIEBROWSER_DESC,
 		FONT_TYPE_COUNT

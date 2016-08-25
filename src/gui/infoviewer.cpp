@@ -1893,9 +1893,9 @@ void CInfoViewer::display_Info(const char *current, const char *next,
 		int pb_w = 112;
 		int pb_startx = BoxEndX - pb_w - SHADOW_OFFSET;
 		int pb_starty = ChanNameY - (pb_h + 10);
-		int pb_shadow = COL_INFOBAR_SHADOW_PLUS_0;
+		int pb_shadow = COL_SHADOW_PLUS_0;
 		timescale->enableShadow(!g_settings.infobar_progressbar);
-		int pb_color = (g_settings.progressbar_design == CProgressBar::PB_MONO) ? COL_INFOBAR_PLUS_0 : COL_INFOBAR_SHADOW_PLUS_0;
+		int pb_color = (g_settings.progressbar_design == CProgressBar::PB_MONO) ? COL_INFOBAR_PLUS_0 : COL_SHADOW_PLUS_0;
 		if(g_settings.infobar_progressbar){
 			pb_startx = xStart;
 			pb_w = /*skinEnabled ? pbW :*/ BoxEndX - 10 - xStart;
