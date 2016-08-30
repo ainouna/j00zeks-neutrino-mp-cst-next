@@ -358,8 +358,13 @@ bool setStaticAttributes(const std::string &name, const bool automatic_start, co
 	attribute["netmask"] = netmask;
 
 	if(wireless) {
+#if 0
 		attribute["pre-up"] = "/etc/network/pre-" + name + ".sh";
 		attribute["post-down"] = "/etc/network/post-" + name + ".sh";
+#else
+		attribute["pre-up"] = "wpa_supplicant -i" +name + " -c/etc/wpa_supplicant.conf -B -dd -Dwext || true";
+		attribute["post-down"] = "wpa_cli -i" + name + " terminate || true";
+#endif
 	}
 
 	if (!broadcast.empty())
@@ -379,8 +384,13 @@ bool setDhcpAttributes(const std::string &name, const bool automatic_start, bool
 		attribute["hostname"] = hostname;
 
 	if(wireless) {
+#if 0
 		attribute["pre-up"] = "/etc/network/pre-" + name + ".sh";
 		attribute["post-down"] = "/etc/network/post-" + name + ".sh";
+#else
+		attribute["pre-up"] = "wpa_supplicant -i" +name + " -c/etc/wpa_supplicant.conf -B -dd -Dwext || true";
+		attribute["post-down"] = "wpa_cli -i" + name + " terminate || true";
+#endif
 	}
 
 	return write_interface("/etc/network/interfaces", name, automatic_start, "inet", "dhcp", attribute);

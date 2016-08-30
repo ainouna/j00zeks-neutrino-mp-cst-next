@@ -218,7 +218,7 @@ CBouquetList   * AllFavBouquetList;
 CPlugins       * g_PluginList;
 CRemoteControl * g_RemoteControl;
 CPictureViewer * g_PicViewer;
-#if !HAVE_SPARK_HARDWARE
+#if !HAVE_SPARK_HARDWARE && !HAVE_DUCKBOX_HARDWARE
 CCAMMenuHandler * g_CamHandler;
 #endif
 CVolume        * g_volume;
@@ -396,6 +396,9 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	g_settings.analog_mode2 = configfile.getInt32("analog_mode2", (int)ANALOG_SD_YPRPB_CINCH); // default YPBPR
 #endif
 #if HAVE_SPARK_HARDWARE || HAVE_DUCKBOX_HARDWARE
+	g_settings.j00zek_channellist_loop_begining_end = configfile.getInt32("j00zek_channellist_loop_begining_end", 0); // default off
+	g_settings.j00zek_channellist_name_and_descr = configfile.getInt32("j00zek_channellist_name_and_descr", 1); // default on
+	g_settings.j00zek_skin_theme = configfile.getString("j00zek_skin_theme","none");
 	g_settings.hdmi_mode = configfile.getInt32("hdmi_mode", (int)COLORFORMAT_HDMI_RGB);
 #endif
 	g_settings.hdmi_cec_mode = configfile.getInt32("hdmi_cec_mode", 0); // default off
@@ -425,8 +428,8 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	g_settings.audio_mixer_volume_spdif = configfile.getInt32("audio_mixer_volume_spdif", 75);
 #endif
 
-	g_settings.audio_volume_percent_ac3 = configfile.getInt32("audio_volume_percent_ac3", 100);
-	g_settings.audio_volume_percent_pcm = configfile.getInt32("audio_volume_percent_pcm", 100);
+	g_settings.audio_volume_percent_ac3 = configfile.getInt32("audio_volume_percent_ac3",   100);
+	g_settings.audio_volume_percent_pcm = configfile.getInt32("audio_volume_percent_pcm",   65);
 
 	g_settings.channel_mode = configfile.getInt32("channel_mode", LIST_MODE_FAV);
 	g_settings.channel_mode_radio = configfile.getInt32("channel_mode_radio", LIST_MODE_FAV);
@@ -437,7 +440,7 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	if (g_settings.channel_mode_initial_radio > -1)
 		g_settings.channel_mode_radio = g_settings.channel_mode_initial_radio;
 
-	g_settings.fan_speed = configfile.getInt32( "fan_speed", 1);
+	g_settings.fan_speed = configfile.getInt32( "fan_speed",   0);
 	if(g_settings.fan_speed < 1) g_settings.fan_speed = 1;
 
 	g_settings.srs_enable = configfile.getInt32( "srs_enable", 0);
@@ -504,7 +507,7 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	g_settings.backlight_tv = configfile.getInt32( "backlight_tv", 1);
 	g_settings.backlight_standby = configfile.getInt32( "backlight_standby", 0);
 	g_settings.backlight_deepstandby = configfile.getInt32( "backlight_deepstandby", 0);
-	g_settings.lcd_scroll = configfile.getInt32( "lcd_scroll", 1);
+	g_settings.lcd_scroll = configfile.getInt32( "lcd_scroll", 0);
 	g_settings.lcd_notify_rclock = configfile.getInt32("lcd_notify_rclock", 1);
 
 	g_settings.hdd_fs = configfile.getInt32( "hdd_fs", 0);
@@ -588,11 +591,11 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	g_settings.epg_extendedcache    = configfile.getInt32("epg_extendedcache_time", 360);
 	g_settings.epg_old_events       = configfile.getInt32("epg_old_events", 1);
 	g_settings.epg_max_events       = configfile.getInt32("epg_max_events", 30000);
-	g_settings.epg_dir              = configfile.getString("epg_dir", "/media/sda1/epg");
+	g_settings.epg_dir              = configfile.getString("epg_dir", "/hdd/epg");
 	// NTP-Server for sectionsd
 	g_settings.network_ntpserver    = configfile.getString("network_ntpserver", "time.fu-berlin.de");
 	g_settings.network_ntprefresh   = configfile.getString("network_ntprefresh", "30" );
-	g_settings.network_ntpenable    = configfile.getBool("network_ntpenable", false);
+	g_settings.network_ntpenable    = configfile.getBool("network_ntpenable", true);
 
 	g_settings.ifname = configfile.getString("ifname", "eth0");
 
@@ -656,14 +659,14 @@ int CNeutrinoApp::loadSetup(const char * fname)
 		g_settings.network_nfs[i].type = configfile.getInt32("network_nfs_type_" + i_str, 0);
 		g_settings.network_nfs[i].username = configfile.getString("network_nfs_username_" + i_str, "" );
 		g_settings.network_nfs[i].password = configfile.getString("network_nfs_password_" + i_str, "" );
-		g_settings.network_nfs[i].mount_options1 = configfile.getString("network_nfs_mount_options1_" + i_str, "rw,soft,udp" );
+		g_settings.network_nfs[i].mount_options1 = configfile.getString("network_nfs_mount_options1_" + i_str, "rw,soft,udp,iocharset=utf8" );
 		g_settings.network_nfs[i].mount_options2 = configfile.getString("network_nfs_mount_options2_" + i_str, "nolock,rsize=32768,wsize=32768" );
 		g_settings.network_nfs[i].mac = configfile.getString("network_nfs_mac_" + i_str, "11:22:33:44:55:66");
 	}
-	g_settings.network_nfs_audioplayerdir = configfile.getString( "network_nfs_audioplayerdir", "/media/sda1/music" );
-	g_settings.network_nfs_picturedir = configfile.getString( "network_nfs_picturedir", "/media/sda1/pictures" );
-	g_settings.network_nfs_moviedir = configfile.getString( "network_nfs_moviedir", "/media/sda1/movie" );
-	g_settings.network_nfs_recordingdir = configfile.getString( "network_nfs_recordingdir", "/media/sda1/movie" );
+	g_settings.network_nfs_audioplayerdir = configfile.getString( "network_nfs_audioplayerdir", "/hdd/music" );
+	g_settings.network_nfs_picturedir = configfile.getString( "network_nfs_picturedir", "/hdd/pictures" );
+	g_settings.network_nfs_moviedir = configfile.getString( "network_nfs_moviedir", "/hdd/movie" );
+	g_settings.network_nfs_recordingdir = configfile.getString( "network_nfs_recordingdir", "/hdd/movie" );
 	g_settings.timeshiftdir = configfile.getString( "timeshiftdir", "" );
 	g_settings.downloadcache_dir = configfile.getString( "downloadcache_dir", g_settings.network_nfs_recordingdir.c_str());
 	g_settings.last_webtv_dir = configfile.getString( "last_webtv_dir", CONFIGDIR);
@@ -734,7 +737,7 @@ int CNeutrinoApp::loadSetup(const char * fname)
 
 	// default plugin for movieplayer
 	g_settings.movieplayer_plugin = configfile.getString( "movieplayer_plugin", "---" );
-	g_settings.plugin_hdd_dir = configfile.getString( "plugin_hdd_dir", "/media/sda1/plugins" );
+	g_settings.plugin_hdd_dir = configfile.getString( "plugin_hdd_dir", "/hdd/plugins" );
 
 	g_settings.plugins_disabled = configfile.getString( "plugins_disabled", "" );
 	g_settings.plugins_game = configfile.getString( "plugins_game", "" );
@@ -742,7 +745,7 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	g_settings.plugins_script = configfile.getString( "plugins_script", "" );
 	g_settings.plugins_lua = configfile.getString( "plugins_lua", "" );
 
-	g_settings.logo_hdd_dir = configfile.getString( "logo_hdd_dir", "/media/sda1/logos" );
+	g_settings.logo_hdd_dir = configfile.getString( "logo_hdd_dir", "/hdd/logos" );
 
 	g_settings.webtv_xml.clear();
 	int webtv_count = configfile.getInt32("webtv_xml_count", 0);
@@ -782,7 +785,7 @@ int CNeutrinoApp::loadSetup(const char * fname)
 #endif
 	g_settings.auto_cover = configfile.getInt32( "auto_cover",  0);
 
-	g_settings.screenshot_dir = configfile.getString( "screenshot_dir", "/media/sda1/movie" );
+	g_settings.screenshot_dir = configfile.getString( "screenshot_dir", "/hdd/movie" );
 	g_settings.cacheTXT = configfile.getInt32( "cacheTXT",  0);
 	g_settings.minimode = configfile.getInt32( "minimode",  0);
 	g_settings.mode_clock = configfile.getInt32( "mode_clock",  0);
@@ -793,13 +796,13 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	g_settings.eventlist_epgplus = configfile.getInt32("eventlist_epgplus", 1);
 	g_settings.channellist_epgtext_align_right	= configfile.getBool("channellist_epgtext_align_right"          , false);
 	g_settings.channellist_progressbar_design = configfile.getInt32("channellist_progressbar_design", g_settings.progressbar_design);
-	g_settings.channellist_foot	= configfile.getInt32("channellist_foot"          , 1);//default next Event
+	g_settings.channellist_foot	= configfile.getInt32("channellist_foot"          ,  2);//default next Event
 	g_settings.channellist_new_zap_mode = configfile.getInt32("channellist_new_zap_mode", 1);
 	g_settings.channellist_hdicon = configfile.getInt32("channellist_hdicon", 0); //default off
 	g_settings.channellist_sort_mode  = configfile.getInt32("channellist_sort_mode", 0);//sort mode: alpha, freq, sat
 	g_settings.channellist_numeric_adjust  = configfile.getInt32("channellist_numeric_adjust", 0);
 	g_settings.channellist_show_channellogo = configfile.getInt32("channellist_show_channellogo", 1);
-	g_settings.channellist_show_infobox = configfile.getInt32("channellist_show_infobox", 1);
+	g_settings.channellist_show_infobox = configfile.getInt32("channellist_show_infobox",  0);
 	g_settings.channellist_show_numbers = configfile.getInt32("channellist_show_numbers", 1);
 
 	//screen configuration
@@ -918,6 +921,7 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	g_settings.lcd_info_line = configfile.getInt32("lcd_info_line", 0);//channel name or clock
 #if HAVE_DUCKBOX_HARDWARE || BOXMODEL_SPARK7162
 	g_settings.lcd_vfd_scroll = configfile.getInt32("lcd_vfd_scroll", 1);
+	g_settings.lcd_vfd_recicon = configfile.getInt32("lcd_vfd_recicon", 0);
 #endif
 
 	//Picture-Viewer
@@ -935,7 +939,7 @@ int CNeutrinoApp::loadSetup(const char * fname)
 #ifdef SHOUTCAST_DEV_ID
 	g_settings.shoutcast_dev_id = SHOUTCAST_DEV_ID;
 #else
-	g_settings.shoutcast_dev_id = configfile.getString("shoutcast_dev_id","XXXXXXXXXXXXXXXX");
+	g_settings.shoutcast_dev_id = configfile.getString("shoutcast_dev_id","fa1jo93O_raeF0v9");
 #endif
 	g_settings.shoutcast_enabled = configfile.getInt32("shoutcast_enabled", 1);
 	g_settings.shoutcast_enabled = check_shoutcast_dev_id();
@@ -952,7 +956,7 @@ int CNeutrinoApp::loadSetup(const char * fname)
 #ifdef TMDB_API_KEY
 	g_settings.tmdb_api_key = TMDB_API_KEY;
 #else
-	g_settings.tmdb_api_key = configfile.getString("tmdb_api_key","XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+	g_settings.tmdb_api_key = configfile.getString("tmdb_api_key","c7e18469380f567e7aa7279717463f2a");
 #endif
 	g_settings.tmdb_enabled = configfile.getInt32("tmdb_enabled", 1);
 	g_settings.tmdb_enabled = check_tmdb_api_key();
@@ -1112,6 +1116,8 @@ void CNeutrinoApp::saveSetup(const char * fname)
 	configfile.setInt32( "analog_mode1", g_settings.analog_mode1 );
 	configfile.setInt32( "analog_mode2", g_settings.analog_mode2 );
 #if HAVE_SPARK_HARDWARE || HAVE_DUCKBOX_HARDWARE
+	configfile.setInt32( "j00zek_channellist_loop_begining_end", g_settings.j00zek_channellist_loop_begining_end );
+	configfile.setString("j00zek_skin_theme", g_settings.j00zek_skin_theme);
 	configfile.setInt32( "hdmi_mode", g_settings.hdmi_mode );
 #endif
 	configfile.setInt32( "video_Format", g_settings.video_Format );
@@ -1501,6 +1507,7 @@ void CNeutrinoApp::saveSetup(const char * fname)
 	configfile.setInt32("lcd_info_line", g_settings.lcd_info_line);//channel name or clock
 #if HAVE_DUCKBOX_HARDWARE || BOXMODEL_SPARK7162
 	configfile.setInt32("lcd_vfd_scroll", g_settings.lcd_vfd_scroll);
+	configfile.setInt32("lcd_vfd_recicon", g_settings.lcd_vfd_recicon);
 #endif
 
 	//Picture-Viewer
@@ -2220,7 +2227,7 @@ TIMER_START();
 	CLocaleManager::loadLocale_ret_t loadLocale_ret = g_Locale->loadLocale(g_settings.language.c_str());
 	if (loadLocale_ret == CLocaleManager::NO_SUCH_LOCALE)
 	{
-		g_settings.language = "deutsch";
+		g_settings.language = "english";
 		loadLocale_ret = g_Locale->loadLocale(g_settings.language.c_str());
 		show_startwizard = true;
 	}
@@ -2247,7 +2254,9 @@ TIMER_START();
 	CVFD::getInstance()->init(neutrinoFonts->fontDescr.filename.c_str(), neutrinoFonts->fontDescr.name.c_str());
 	CVFD::getInstance()->Clear();
 	CVFD::getInstance()->ShowText(g_Locale->getText(LOCALE_NEUTRINO_STARTING));
+#if !HAVE_DUCKBOX_HARDWARE
 	CVFD::getInstance()->setBacklight(g_settings.backlight_tv);
+#endif
 
 #if HAVE_DUCKBOX_HARDWARE
 	CVFD::getInstance()->ClearIcons();
@@ -2371,18 +2380,19 @@ TIMER_START();
 	g_InfoViewer = new CInfoViewer;
 	g_EventList = new CEventList;
 
-#if !HAVE_SPARK_HARDWARE
+#if !HAVE_SPARK_HARDWARE && !HAVE_DUCKBOX_HARDWARE
 	g_CamHandler = new CCAMMenuHandler();
 	g_CamHandler->init();
 #endif
 
+#if 0
 #ifndef ASSUME_MDEV
 	mkdir("/media/sda1", 0755);
 	mkdir("/media/sdb1", 0755);
 	my_system(3, "mount", "/dev/sda1", "/media/sda1");
 	my_system(3, "mount", "/dev/sdb1", "/media/sdb1");
 #endif
-
+#endif
 	CFSMounter::automount();
 	g_PluginList = new CPlugins;
 	g_PluginList->setPluginDir(PLUGINDIR);
@@ -3076,7 +3086,7 @@ bool CNeutrinoApp::wakeupFromStandby(void)
 
 	if ((mode == mode_standby) && !alive) {
 		cpuFreq->SetCpuFreq(g_settings.cpufreq * 1000 * 1000);
-#if !HAVE_SPARK_HARDWARE
+#if !HAVE_SPARK_HARDWARE && !HAVE_DUCKBOX_HARDWARE
 		if(g_settings.ci_standby_reset) {
 			g_CamHandler->exec(NULL, "ca_ci_reset0");
 			g_CamHandler->exec(NULL, "ca_ci_reset1");
@@ -3232,7 +3242,7 @@ int CNeutrinoApp::handleMsg(const neutrino_msg_t _msg, neutrino_msg_data_t data)
 		return( res & ( 0xFFFFFFFF - messages_return::unhandled ) );
 	}
 
-#if !HAVE_SPARK_HARDWARE
+#if !HAVE_SPARK_HARDWARE && !HAVE_DUCKBOX_HARDWARE
 	/* we assume g_CamHandler free/delete data if needed */
 	res = g_CamHandler->handleMsg(msg, data);
 	if( res != messages_return::unhandled ) {
@@ -4180,7 +4190,10 @@ void CNeutrinoApp::standbyMode( bool bOnOff, bool fromDeepStandby )
 #ifdef ENABLE_GRAPHLCD
 		nGLCD::StandbyMode(true);
 #endif
-		CVFD::getInstance()->ShowText("standby...");
+		if (g_settings.language == "polski")
+			CVFD::getInstance()->ShowText("Czuwanie...");
+		else
+			CVFD::getInstance()->ShowText("standby...");
 		if( mode == mode_scart ) {
 			//g_Controld->setScartMode( 0 );
 		}
@@ -4261,7 +4274,10 @@ void CNeutrinoApp::standbyMode( bool bOnOff, bool fromDeepStandby )
 		// Active standby off
 		powerManager->SetStandby(false, false);
 		CVFD::getInstance()->setMode(CVFD::MODE_TVRADIO);
-		CVFD::getInstance()->ShowText("resume");
+		if (g_settings.language == "polski")
+			CVFD::getInstance()->ShowText("Pobudka...");
+		else
+			CVFD::getInstance()->ShowText("resume");
 		cpuFreq->SetCpuFreq(g_settings.cpufreq * 1000 * 1000);
 		videoDecoder->Standby(false);
 		CEpgScan::getInstance()->Stop();
@@ -4286,7 +4302,7 @@ void CNeutrinoApp::standbyMode( bool bOnOff, bool fromDeepStandby )
 		}
 #endif
 
-#if !HAVE_SPARK_HARDWARE
+#if !HAVE_SPARK_HARDWARE && !HAVE_DUCKBOX_HARDWARE
 		if(!recordingstatus && g_settings.ci_standby_reset) {
 			g_CamHandler->exec(NULL, "ca_ci_reset0");
 			g_CamHandler->exec(NULL, "ca_ci_reset1");
@@ -4445,6 +4461,27 @@ int CNeutrinoApp::exec(CMenuTarget* parent, const std::string & actionKey)
 #endif
 		unlink("/tmp/.reboot");
 		returnval = menu_return::RETURN_NONE;
+	}
+	else if(actionKey=="j00zek_runpli")
+		ExitRun(true, 2);
+	else if(actionKey=="j00zek_update")
+		ExitRun(true, 3);
+	else if(actionKey=="j00zek_restartoscam")
+	{
+		CHintBox * hintBox = new CHintBox(LOCALE_MESSAGEBOX_INFO,
+			g_Locale->getText(LOCALE_J00ZEK_RESTARTING_SOFTCAM));
+		hintBox->paint();
+	
+		my_system("/usr/ntrino/scripts/restart_softcam.sh");
+		sleep(2);
+		g_Zapit->setStandby(true);
+		sleep(2);
+		g_Zapit->setStandby(false);
+		sleep(2);
+		g_Zapit->Rezap();
+
+		hintBox->hide();
+		delete hintBox;
 	}
 	else if (actionKey=="clock_switch")
 	{
@@ -4777,12 +4814,14 @@ void CNeutrinoApp::loadKeys(const char * fname)
 	g_settings.key_tvradio_mode = tconfig.getInt32( "key_tvradio_mode", (unsigned int)CRCInput::RC_nokey );
 	g_settings.key_power_off = tconfig.getInt32( "key_power_off", CRCInput::RC_standby );
 
-	g_settings.key_pageup = tconfig.getInt32( "key_channelList_pageup",  CRCInput::RC_page_up );
-	g_settings.key_pagedown = tconfig.getInt32( "key_channelList_pagedown", CRCInput::RC_page_down );
+	g_settings.key_pageup = tconfig.getInt32( "key_pageup",  CRCInput::RC_page_up );
+	g_settings.key_pagedown = tconfig.getInt32( "key_pagedown", CRCInput::RC_page_down );
 	g_settings.key_channelList_cancel = tconfig.getInt32( "key_channelList_cancel",  CRCInput::RC_home );
 	g_settings.key_channelList_sort = tconfig.getInt32( "key_channelList_sort",  CRCInput::RC_blue );
 	g_settings.key_channelList_addrecord = tconfig.getInt32( "key_channelList_addrecord",  CRCInput::RC_red );
 	g_settings.key_channelList_addremind = tconfig.getInt32( "key_channelList_addremind",  CRCInput::RC_yellow );
+	g_settings.key_chlist_pageup = tconfig.getInt32( "key_chlist_pageup",  CRCInput::RC_left );
+	g_settings.key_chlist_pagedown = tconfig.getInt32( "key_chlist_pagedown", CRCInput::RC_right );
 
 	g_settings.key_list_start = tconfig.getInt32( "key_list_start", (unsigned int)CRCInput::RC_nokey );
 	g_settings.key_list_end = tconfig.getInt32( "key_list_end", (unsigned int)CRCInput::RC_nokey );
@@ -4865,12 +4904,14 @@ void CNeutrinoApp::saveKeys(const char * fname)
 	tconfig.setInt32( "key_tvradio_mode", g_settings.key_tvradio_mode );
 	tconfig.setInt32( "key_power_off", g_settings.key_power_off );
 
-	tconfig.setInt32( "key_channelList_pageup", g_settings.key_pageup );
-	tconfig.setInt32( "key_channelList_pagedown", g_settings.key_pagedown );
+	tconfig.setInt32( "key_pageup", g_settings.key_pageup );
+	tconfig.setInt32( "key_pagedown", g_settings.key_pagedown );
 	tconfig.setInt32( "key_channelList_cancel", g_settings.key_channelList_cancel );
 	tconfig.setInt32( "key_channelList_sort", g_settings.key_channelList_sort );
 	tconfig.setInt32( "key_channelList_addrecord", g_settings.key_channelList_addrecord );
 	tconfig.setInt32( "key_channelList_addremind", g_settings.key_channelList_addremind );
+	tconfig.setInt32( "key_chlist_pageup", g_settings.key_chlist_pageup );
+	tconfig.setInt32( "key_chlist_pagedown", g_settings.key_chlist_pagedown );
 
 	tconfig.setInt32( "key_list_start", g_settings.key_list_start );
 	tconfig.setInt32( "key_list_end", g_settings.key_list_end );
@@ -5126,7 +5167,7 @@ void CNeutrinoApp::Cleanup()
 	printf("cleanup 13\n");fflush(stdout);
 	delete g_PluginList; g_PluginList = NULL;
 	printf("cleanup 16\n");fflush(stdout);
-#if !HAVE_SPARK_HARDWARE
+#if !HAVE_SPARK_HARDWARE && !HAVE_DUCKBOX_HARDWARE
 	delete g_CamHandler; g_CamHandler = NULL;
 	printf("cleanup 17\n");fflush(stdout);
 #endif
