@@ -1626,6 +1626,10 @@ const char * CRCInput::getSpecialKeyName(const unsigned int key)
 				return "pvr";
 			case RC_list:
 				return "list";
+			case RC_archive:
+				return "archiv";
+			case RC_search:
+				return "search";
 			default:
 				printf("unknown key: %d (0x%x) \n", key, key);
 				return "unknown";

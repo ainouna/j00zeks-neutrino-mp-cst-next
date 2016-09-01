@@ -262,6 +262,10 @@ class CRCInput
 #else
 			RC_forward	= KEY_FORWARD,
 #endif
+			/* media/portal and archiv/media keys ufs912/ufs913 */
+			RC_archive	= KEY_ARCHIVE,
+			RC_search	= KEY_SEARCH,
+
 			RC_rewind	= KEY_REWIND,
 			RC_stop		= KEY_STOP,
 			RC_timeshift	= KEY_TIME,
@@ -296,7 +300,7 @@ class CRCInput
 
 			/* nbox remote keys */
 			RC_option	= KEY_OPTION,
-			RC_media	= KEY_MEDIA,
+			RC_media	= KEY_MEDIA, // also in ufs912/ufs913
 			RC_n		= KEY_GOTO,
 			RC_pvr		= KEY_PVR,
 			RC_list		= KEY_LIST,
