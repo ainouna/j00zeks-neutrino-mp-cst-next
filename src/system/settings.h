@@ -50,6 +50,8 @@
 #define VIDEOMENU_VIDEOMODE_OPTION_COUNT 13
 #endif
 
+#define fb_pixel_t uint32_t
+
 struct SNeutrinoTheme
 {
 	unsigned char menu_Head_alpha;
@@ -145,6 +147,53 @@ struct SNeutrinoTheme
 	unsigned char clock_Digit_red;
 	unsigned char clock_Digit_green;
 	unsigned char clock_Digit_blue;
+};
+
+struct SNeutrinoSkin
+{
+	bool ReloadSkin;
+	// -- background
+	bool skinEnabled;
+	int bgX;
+	int bgY;
+	int bgW;
+	int bgH;
+	std::string bgpic;
+	// -- all following coords relativly to background.
+	// -- logo
+	bool logoEnabled;
+	int logoX;
+	int logoY;
+	int logoW;
+	int logoH;
+	// -- clock
+	bool clockEnabled;
+	int clockX;
+	int clockY;
+	fb_pixel_t clockColor;
+	// -- satelite info
+	/*satInfoEnabled in globals override*/
+	bool satInfoEnabled;
+	int satInfoX;
+	int satInfoY;
+	fb_pixel_t satInfoColor;
+	// -- channelname
+	bool displayWithLogo;
+	int channelNameX;
+	int channelNameY;
+	int ChannelNameFontSize;
+	fb_pixel_t channelNameColor;
+	// -- curr Next events area
+	int currEventX, currEventY, currEventW, currEventFontSize;
+	fb_pixel_t currEventColor;
+
+	bool BbarEnabled;
+	int  BbarOffset;
+
+	int  IconsX;
+	int  IconsY;
+	
+	bool skinShowSNR;
 };
 
 struct SNeutrinoSettings
@@ -455,6 +504,8 @@ struct SNeutrinoSettings
 
 	//theme/color options
 	SNeutrinoTheme theme;
+	SNeutrinoSkin skin;
+	std::string skinfile;
 	bool osd_colorsettings_advanced_mode;
 
 	int contrast_fonts;

@@ -32,6 +32,7 @@ class CThemes : public CMenuTarget, CChangeObserver
 {
 	private:
 		CConfigFile themefile;
+		CConfigFile skinfile;
 		CColorSetupNotifier *notifier;
 
 		int width;
@@ -40,9 +41,10 @@ class CThemes : public CMenuTarget, CChangeObserver
 		bool hasThemeChanged;
 
 		int Show();
-		void readFile(const char *themename);
-		void saveFile(const char *themename);
+		void readFile(std::string filename);
+		void saveFile(std::string themename);
 		void readThemes(CMenuWidget &);
+		void readSkins(CMenuWidget &);
 		void rememberOldTheme(bool remember);
 		void move_userDir();
 
@@ -50,8 +52,11 @@ class CThemes : public CMenuTarget, CChangeObserver
 		CThemes();
 		void setupDefaultColors();
 		int exec(CMenuTarget* parent, const std::string & actionKey);
+		void readSkinFile(std::string skinname);
 		static void setTheme(CConfigFile &configfile);
 		static void getTheme(CConfigFile &configfile);
+		static void setSkin(CConfigFile &configfile);
+		static void getSkin(CConfigFile &configfile);
 };
 
 #endif

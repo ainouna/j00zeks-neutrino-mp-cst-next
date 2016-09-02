@@ -60,6 +60,7 @@
 #include <gui/pictureviewer.h>
 #include <gui/movieplayer.h>
 #include <gui/infoclock.h>
+#include <gui/themes.h> //for skin
 
 #include <system/helpers.h>
 
@@ -87,125 +88,19 @@ extern cVideo * videoDecoder;
 #define INFOBAR_START_SCRIPT "/usr/ntrino/scripts/infobar.start"
 #define INFOBAR_END_SCRIPT   "/usr/ntrino/scripts/infobar.end"
 
-#include <fstream> //j00zek - skin
-#include <string> //j00zek - skin
-
-static bool ReloadSkin = 1; //if 1-skin is loaded each time channellist shows
-static std::string bgpic;
-static bool piconShown = false;// just status, set when picon displayed
-
-//skin definitions >>>
-// ----- background
-static bool skinEnabled=false;static int bgX=0;static int bgY=0;static int bgW=1280;static int bgH=333;
-// ----- logo
-static bool piconEnabled=true;static int piconX=0;static int piconY=0;static int piconW=220;static int piconH=132;
-// ----- clock
-static bool clockEnabled=true;static int clockX=0;static int clockY=0;static fb_pixel_t clockColor;
-// ----- satelite info
-/*satInfoEnabled in globals*/;
-static int satInfoX=0; static int satInfoY=0; static fb_pixel_t satInfoColor;
-// ----- channelname
-static bool displayWithLogo=true; static int channelNameX=0; static int channelNameY=0, ChannelNameFontSize = 20; static fb_pixel_t channelNameColor;
-// ----- curr Next events area
-static int currEventX=0, currEventY=0, currEventW=1200, currEventFontSize = 14; static fb_pixel_t currEventColor;
-
-static bool BbarEnabled=true;
-
-//<<< end
-
-static void getSkinConfig(std::string configFile )
-{
-	std::ifstream inFile;
-	std::string line[50];
-	int linecount = 0;
-	char cfile [100];
-	sprintf (cfile, "%s/%s", g_settings.j00zek_skin_theme.c_str(), configFile.c_str());
-	
-	inFile.open(cfile);
-	
-	ReloadSkin = 0;
-	if (inFile.is_open())
-	{
-		//printf("j00zTrino: reading conf from %s\n",cfile);
-		skinEnabled = 1;
-		while (linecount < 50 && getline(inFile, line[linecount++]))
-		{};
-	
-		for (int i = 0; i < linecount; i++)
-		{
-			std::istringstream iss(line[i]);
-			std::string cmd;
-			std::string parm;
-
-			getline(iss, cmd, '=');
-			getline(iss, parm, '=');
-
- 			printf("j00zTrino: read param=%s, value=%s\n", cmd.c_str(), parm.c_str());
-
-			if (cmd == "ReloadSkin") ReloadSkin = atoi(parm.c_str());
-			else if (cmd == "skinEnabled") skinEnabled = atoi(parm.c_str());
-			else if (cmd == "bgX") bgX = atoi(parm.c_str());
-			else if (cmd == "bgY") bgY = atoi(parm.c_str());
-			else if (cmd == "bgW") bgW = atoi(parm.c_str());
-			else if (cmd == "bgH") bgH = atoi(parm.c_str());
-			else if (cmd == "bgpic") bgpic = parm;
-
-			else if (cmd == "piconEnabled") piconEnabled = atoi(parm.c_str());
-			else if (cmd == "piconX") piconX = atoi(parm.c_str());
-			else if (cmd == "piconY") piconY = atoi(parm.c_str());
-			else if (cmd == "piconW") piconW = atoi(parm.c_str());
-			else if (cmd == "piconH") piconH = atoi(parm.c_str());
-
-			else if (cmd == "displayWithLogo") displayWithLogo = atoi(parm.c_str());
-			else if (cmd == "channelNameX") channelNameX = atoi(parm.c_str());
-			else if (cmd == "channelNameY") channelNameY = atoi(parm.c_str());
-			else if (cmd == "channelNameColor") channelNameColor = CFrameBuffer::getInstance()->realcolor[atoi(parm.c_str())];
-			else if (cmd == "ChannelNameFontSize") ChannelNameFontSize = atoi(parm.c_str());
-
-			else if (cmd == "clockEnabled") clockEnabled = atoi(parm.c_str());
-			else if (cmd == "clockX") clockX = atoi(parm.c_str());
-			else if (cmd == "clockY") clockY = atoi(parm.c_str());
-			else if (cmd == "clockColor") clockColor = CFrameBuffer::getInstance()->realcolor[atoi(parm.c_str())];
-
-			else if (cmd == "currEventX") currEventX = atoi(parm.c_str());
-			else if (cmd == "currEventY") currEventY = atoi(parm.c_str());
-			else if (cmd == "currEventW") currEventW = atoi(parm.c_str());
-			else if (cmd == "currEventColor") currEventColor = CFrameBuffer::getInstance()->realcolor[atoi(parm.c_str())];
-			else if (cmd == "currEventFontSize") currEventFontSize = atoi(parm.c_str());
- 
-			else if (cmd == "satInfoEnabled") g_settings.infobar_sat_display = atoi(parm.c_str());
-			else if (cmd == "satInfoX") satInfoX = atoi(parm.c_str());
-			else if (cmd == "satInfoY") satInfoY = atoi(parm.c_str());
-			else if (cmd == "satInfoColor") satInfoColor = CFrameBuffer::getInstance()->realcolor[atoi(parm.c_str())];
-			
-			else if (cmd == "BbarEnabled") 	BbarEnabled = atoi(parm.c_str());
-			
-			/*
-			else if (cmd == "XXX") 	XXX = atoi(parm.c_str());
-			*/
-
-		}
-		inFile.close();
-	} else {
-		skinEnabled = 0;
-		printf("j00zTrino: no skin conf file (%s)\n",cfile);
-	}
-
-}
+static bool logoShown = false;// just status, set when picon displayed
 
 static bool skinPaintBackground()
 {
-	if (skinEnabled && g_PicViewer->DisplayImage(bgpic, bgX, bgY, bgW, bgH)) /* we don't resize png has to be correct size to speedup */
+ 	/* we don't resize png has to be correct size to speedup */
+	/* g_settings.skin.bgpic contains fullpath to the pic for flexibility */
+	if (g_settings.skin.skinEnabled)
+		printf(0,'skin enabled\n');
+	if (g_settings.skin.skinEnabled && g_PicViewer->DisplayImage(g_settings.skin.bgpic, g_settings.skin.bgX, g_settings.skin.bgY, g_settings.skin.bgW, g_settings.skin.bgH))
 		return 1;
 	else
 		return 0;
 }
-
-static bool skinShowSNR()
-{
-	return 1;
-}
-
 /*j00zek end of skin part */
 
 event_id_t CInfoViewer::last_curr_id = 0, CInfoViewer::last_next_id = 0;
@@ -321,7 +216,7 @@ void CInfoViewer::Init()
 */
 void CInfoViewer::start ()
 {
-	if (ReloadSkin) getSkinConfig("infoviewer.conf");
+	if (g_settings.skin.ReloadSkin) CThemes().readSkinFile(g_settings.skinfile.c_str());
 	info_time_width = g_Font[SNeutrinoSettings::FONT_TYPE_INFOBAR_INFO]->getRenderWidth("22:22") + 10;
 
 	InfoHeightY = g_Font[SNeutrinoSettings::FONT_TYPE_INFOBAR_CHANNAME]->getHeight() * 9/8 +
@@ -335,10 +230,10 @@ void CInfoViewer::start ()
 	ChanHeight = max(75, ChanHeight);
 	numbox_offset = 3;
 
-	BoxStartX = skinEnabled ? bgX: g_settings.screen_StartX + 10;
-	BoxEndX =  skinEnabled ? (bgX + bgW) : g_settings.screen_EndX - 10;
+	BoxStartX = g_settings.skin.skinEnabled ? g_settings.skin.bgX: g_settings.screen_StartX + 10;
+	BoxEndX =  g_settings.skin.skinEnabled ? (g_settings.skin.bgX + g_settings.skin.bgW) : g_settings.screen_EndX - 10;
 	BoxEndY = g_settings.screen_EndY - 10 - infoViewerBB->InfoHeightY_Info - infoViewerBB->bottom_bar_offset;
-	BoxStartY = skinEnabled ? (bgY + bgH) : BoxEndY - InfoHeightY - ChanHeight / 2;
+	BoxStartY = g_settings.skin.skinEnabled ? (g_settings.skin.bgY + g_settings.skin.bgH) : BoxEndY - InfoHeightY - ChanHeight / 2;
 
 	ChanNameY = BoxStartY + (ChanHeight / 2) + SHADOW_OFFSET;
 	ChanInfoX = BoxStartX + (ChanWidth / 3);
@@ -374,9 +269,9 @@ void CInfoViewer::changePB()
 
 void CInfoViewer::initClock()
 {
-	if (skinEnabled && !clockEnabled){
-	  printf("cancel initclock\n");
-	  return; }
+	if (g_settings.skin.skinEnabled && !g_settings.skin.clockEnabled){
+		printf("clock disabled in skin>cancelling initclock\n");
+		return; }
 	
 	int gradient_top = g_settings.theme.infobar_gradient_top;
 
@@ -393,10 +288,11 @@ void CInfoViewer::initClock()
 	clock->setColorBody(COL_INFOBAR_PLUS_0);
 	clock->setCorner(RADIUS_LARGE, CORNER_TOP_RIGHT);
 	clock->setClockFont(g_Font[SNeutrinoSettings::FONT_TYPE_INFOBAR_CHANNAME]);
-	if (skinEnabled)
+	if (g_settings.skin.skinEnabled)
 	{
-		clock->setPos(clockX, clockY);
-		clock->setTextColor(clockColor);
+		clock->setPos(g_settings.skin.bgX + g_settings.skin.clockX, g_settings.skin.bgY + g_settings.skin.clockY);
+		clock->setTextColor(g_settings.skin.clockColor);
+		clock->doPaintBg(false);
 	}
 	else
 	{
@@ -746,9 +642,10 @@ void CInfoViewer::showMovieTitle(const int playState, const t_channel_id &Channe
 	if (g_settings.infobar_show_channellogo > 1)
 		ChannelLogoMode = showChannelLogo(current_channel_id, 0);
 	if (ChannelLogoMode == 0 || ChannelLogoMode == 3 || ChannelLogoMode == 4)
-		if (skinEnabled) {
-			if (displayWithLogo || !piconShown) {
-				g_Font[ChannelNameFontSize]->RenderString(bgX + channelNameX, bgY + channelNameY,bgX + bgW - time_width ,ChannelName, channelNameColor);
+		if (g_settings.skin.skinEnabled) {
+			g_Font[SNeutrinoSettings::FONT_TYPE_INFOBAR_CHANNAME]->setSize(g_settings.skin.ChannelNameFontSize);
+			if (g_settings.skin.displayWithLogo || !logoShown) {
+				g_Font[SNeutrinoSettings::FONT_TYPE_INFOBAR_CHANNAME]->RenderString(g_settings.skin.bgX + g_settings.skin.channelNameX, g_settings.skin.bgY + g_settings.skin.channelNameY,g_settings.skin.bgX + g_settings.skin.bgW - time_width ,ChannelName, g_settings.skin.channelNameColor);
 			}
 		} else {
 			g_Font[SNeutrinoSettings::FONT_TYPE_INFOBAR_CHANNAME]->RenderString(ChanNameX + 10 , ChanNameY + header_height,BoxEndX - (ChanNameX + 20) - time_width - LEFT_OFFSET - 10 ,ChannelName, COL_INFOBAR_TEXT);
@@ -923,9 +820,10 @@ void CInfoViewer::showTitle(CZapitChannel * channel, const bool calledFromNumZap
 	showRecordIcon (show_dot);
 	show_dot = !show_dot;
 
-	if (showButtonBar && (!skinEnabled || BbarEnabled)) {
+	if (!g_settings.skin.skinEnabled && showButtonBar)
 		infoViewerBB->paintshowButtonBar();
-	}
+	else if (g_settings.skin.skinEnabled && g_settings.skin.BbarEnabled)
+		infoViewerBB->paintshowButtonBar();
 
 	int ChanNumWidth = 0;
 	int ChannelLogoMode = 0;
@@ -963,10 +861,10 @@ void CInfoViewer::showTitle(CZapitChannel * channel, const bool calledFromNumZap
 				}
 			}
 			int h_sfont = g_SignalFont->getHeight();
-if (numbox || !skinEnabled)
+if (numbox || !g_settings.skin.skinEnabled)
 			g_SignalFont->RenderString (BoxStartX + numbox_offset + ((ChanWidth - satNameWidth) / 2) , numbox->getYPos() + h_sfont, satNameWidth, satname_tmp, COL_INFOBAR_TEXT);
 else
-	g_SignalFont->RenderString (satInfoX, satInfoY, satNameWidth, satname_tmp, satInfoColor);
+	g_SignalFont->RenderString (g_settings.skin.satInfoX, g_settings.skin.satInfoY, satNameWidth, satname_tmp, g_settings.skin.satInfoColor);
 		}
 if (numbox) { /*if numbox does not exists, we use skin)
 		/* TODO: the logic will get much easier once we decouple channellogo and signal bars */
@@ -1004,10 +902,11 @@ if (numbox) { /*if numbox does not exists, we use skin)
 		if (ChannelLogoMode != 2) {
 			//FIXME good color to display inactive for zap ?
 			//fb_pixel_t color = CNeutrinoApp::getInstance ()->channelList->SameTP(new_channel_id) ? COL_INFOBAR_TEXT : COL_INFOBAR_SHADOW_TEXT;
-			fb_pixel_t color = skinEnabled ? channelNameColor : COL_INFOBAR_TEXT;
-			if (skinEnabled) {
-				if (displayWithLogo || !piconShown) {
-					g_Font[ChannelNameFontSize]->RenderString( bgX + channelNameX, bgY + channelNameY,bgX + bgW - time_width ,ChannelName, channelNameColor);
+			fb_pixel_t color = g_settings.skin.skinEnabled ? g_settings.skin.channelNameColor : COL_INFOBAR_TEXT;
+			if (g_settings.skin.skinEnabled) {
+				if (g_settings.skin.displayWithLogo || !logoShown) {
+					g_Font[SNeutrinoSettings::FONT_TYPE_INFOBAR_CHANNAME]->setSize(g_settings.skin.ChannelNameFontSize);
+					g_Font[SNeutrinoSettings::FONT_TYPE_INFOBAR_CHANNAME]->RenderString( g_settings.skin.bgX + g_settings.skin.channelNameX, g_settings.skin.bgY + g_settings.skin.channelNameY,g_settings.skin.bgX + g_settings.skin.bgW,ChannelName, g_settings.skin.channelNameColor);
 				}
 			} else {
 				g_Font[SNeutrinoSettings::FONT_TYPE_INFOBAR_CHANNAME]->RenderString(
@@ -1803,7 +1702,7 @@ void CInfoViewer::showSNR ()
 {
 	if (! is_visible)
 		return;
-if (!skinEnabled ||!skinShowSNR()) //0 when to skin
+if (!g_settings.skin.skinEnabled || (g_settings.skin.skinEnabled && g_settings.skin.skinShowSNR))
 {
 	/* right now, infobar_show_channellogo == 3 is the trigger for signal bars etc.
 	   TODO: decouple this  */
@@ -1864,9 +1763,9 @@ void CInfoViewer::display_Info(const char *current, const char *next,
 	 */
 
 	int height = g_Font[SNeutrinoSettings::FONT_TYPE_INFOBAR_INFO]->getHeight();
-	int CurrInfoY = skinEnabled ? (bgY + currEventY) : (BoxEndY + ChanNameY + header_height) / 2;
+	int CurrInfoY = g_settings.skin.skinEnabled ? (g_settings.skin.bgY + g_settings.skin.currEventY) : (BoxEndY + ChanNameY + header_height) / 2;
 	int NextInfoY = CurrInfoY/* + height*/;	// lower end of next info box
-	int InfoX = skinEnabled ? (bgX + currEventX) : ChanInfoX + 10;
+	int InfoX = g_settings.skin.skinEnabled ? (g_settings.skin.bgX + g_settings.skin.currEventX) : ChanInfoX + 10;
 
 	int xStart = InfoX;
 	if (starttimes)
@@ -2329,7 +2228,7 @@ void CInfoViewer::killTitle()
 			rec->kill();
 		//printf("killTitle(%d, %d, %d, %d)\n", BoxStartX, BoxStartY, BoxEndX+ SHADOW_OFFSET-BoxStartX, bottom-BoxStartY);
 		//frameBuffer->paintBackgroundBox(BoxStartX, BoxStartY, BoxEndX+ SHADOW_OFFSET, bottom);
-		if (skinEnabled) frameBuffer->Clear();
+		if (g_settings.skin.skinEnabled) frameBuffer->Clear();
 		
 		if (!(zap_mode & IV_MODE_VIRTUAL_ZAP)){
 			if (infobar_txt)
@@ -2412,12 +2311,16 @@ int CInfoViewer::showChannelLogo(const t_channel_id logo_channel_id, const int c
 	if (! logo_available)
 		return 0;
 	//### > Skin
-	if (skinEnabled){
-		if (g_PicViewer->DisplayImage(strAbsIconPath, bgX + piconX, bgY + piconY, piconW, piconH)) {
-			piconShown = true;
+	if (g_settings.skin.skinEnabled){
+		if (g_settings.skin.logoEnabled && g_PicViewer->DisplayImage(strAbsIconPath, 
+				g_settings.skin.bgX + g_settings.skin.logoX,
+				g_settings.skin.bgY + g_settings.skin.logoY,
+				g_settings.skin.logoW ? g_settings.skin.logoW : logo_w,
+				g_settings.skin.logoH ? g_settings.skin.logoH : logo_h)) {
+			logoShown = true;
 			return 1; //logo shown
 		} else {
-			piconShown = false;
+			logoShown = false;
 			return 0; //no logo
 		}
 	}

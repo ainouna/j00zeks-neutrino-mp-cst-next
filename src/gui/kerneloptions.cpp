@@ -83,6 +83,7 @@ void CKernelOptions::updateStatus(void)
 			char name[sizeof(buf)];
 			if (1 == sscanf(buf, "%s", name))
 				for (unsigned int i = 0; i < modules.size(); i++) {
+					printf("%s\n", modules[i].moduleList.back().first.c_str());						
 					if (name == modules[i].moduleList.back().first) {
 						modules[i].installed = true;
 						break;
@@ -172,13 +173,14 @@ void CKernelOptions::load()
 {
 	modules.clear();
 
-	FILE *f = fopen("/etc/modules.available", "r");
+	FILE *f = fopen("/etc/KernelModules.conf", "r");
 	// Syntax:
 	//
 	// # comment
+	// - disabled module(does not exist in the system)
 	// module # description
-	// module module module # description
-	// module module(arguments) module # description
+	// module module module | description
+	// module module(arguments) module | description
 	//
 
 	if (f) {
@@ -186,7 +188,7 @@ void CKernelOptions::load()
 		while (fgets(buf, sizeof(buf), f)) {
 			if (buf[0] == '#')
 				continue;
-			char *comment = strchr(buf, '#');
+			char *comment = strchr(buf, '|');
 			if (!comment)
 				continue;
 			*comment++ = 0;
@@ -230,41 +232,23 @@ void CKernelOptions::load()
 				} else {
 					mod = std::string(b);
 					b = e;
+				}
+				m.moduleList.push_back(make_pair(mod, args));
 			}
-			m.moduleList.push_back(make_pair(mod, args));
-		}
-		m.mc = NULL;
-		if (m.moduleList.size() > 0)
-			modules.push_back(m);
-	}
-	fclose(f);
-	}
-
-	f = fopen("/etc/modules.extra", "r");
-	if (f) {
-		char buf[200];
-		while (fgets(buf, sizeof(buf), f)) {
-			char *t = strchr(buf, '#');
-			if (t)
-				*t = 0;
-			char name[200];
-			if (1 == sscanf(buf, "%s", name)) {
-				for (unsigned int i = 0; i < modules.size(); i++)
-					if (modules[i].moduleList.back().first == name) {
-						modules[i].active = modules[i].active_orig = 1;
-						break;
-					}
-			}
+			m.mc = NULL;
+			if (m.moduleList.size() > 0)
+				modules.push_back(m);
 		}
 		fclose(f);
+		updateStatus();
 	}
 }
 
 void CKernelOptions::save()
 {
-	FILE *f = fopen("/etc/modules.extra", "w");
+	FILE *f = fopen("/etc/KernelModules.active", "w");
 	if (f) {
-		chmod("/etc/modules.extra", 0644);
+		chmod("/etc/KernelModules.active", 0644);
 		for (unsigned int i = 0; i < modules.size(); i++) {
 			if (modules[i].active) {
 				for (unsigned int j = 0; j < modules[i].moduleList.size(); j++)

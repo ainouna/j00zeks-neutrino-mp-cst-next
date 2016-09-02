@@ -333,7 +333,7 @@ int CMiscMenue::showMiscSettingsMenu()
 	mf->setHint("", LOCALE_MENU_HINT_MISC_CPUFREQ);
 	misc_menue.addItem(mf);
 #endif /*CPU_FREQ*/
-#if 0
+#if 1
 #if HAVE_SPARK_HARDWARE || HAVE_DUCKBOX_HARDWARE
 	// kerneloptions
 	CKernelOptions kernelOptions;

@@ -2668,5 +2668,7 @@ const char * locale_real_names[] =
 	"j00zek.vfd_recicon",
 	"j00zek.vfd_recicon_hint",
 	"j00zek.restarting_softcam",
+	"j00zek.colorthememenu_skins",
+	"j00zek.colorthememenu_userskins",
 };
 #endif

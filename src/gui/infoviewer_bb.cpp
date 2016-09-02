@@ -377,6 +377,8 @@ void CInfoViewerBB::showBBButtons(bool paintFooter)
 {
 	if (!is_visible)
 		return;
+	if ((g_settings.skin.skinEnabled) && (!g_settings.skin.BbarEnabled))
+		return;
 	int i;
 	bool paint = false;
 
@@ -740,6 +742,8 @@ void CInfoViewerBB::paint_ca_icons(int caid, const char *icon, int &icon_space_o
 	char buf[20];
 	int endx = g_InfoViewer->BoxEndX - (g_settings.infobar_casystem_frame ? 20 : 10);
 	int py = g_InfoViewer->BoxEndY + (g_settings.infobar_casystem_frame ? 4 : 2); /* hand-crafted, should be automatic */
+	if (g_settings.skin.skinEnabled && !g_settings.skin.BbarEnabled)
+		py += g_settings.skin.BbarOffset;
 	int px = 0;
 	static map<int, std::pair<int,const char*> > icon_map;
 	const int icon_space = 10, icon_number = 10;
