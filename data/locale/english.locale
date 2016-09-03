@@ -2623,3 +2623,23 @@ zapitsetup.last_radio Radio Channel
 zapitsetup.last_tv TV Channel
 zapitsetup.last_use from last Channel
 zaptotimer.announce Zapto timer in one minute
+fontsize.moviebrowser_list Font size on movie list
+fontsize.moviebrowser_desc font size on movie description
+keybindingmenu.chlistup channel up
+keybindingmenu.chlistdown channel down
+menu.hint_key_chlistup channel up
+menu.hint_key_chlistdown channel down
+j00zek.openpli start openpli
+j00zek.update update neutrino
+j00zek.restart restart
+j00zek.vfd_show_number display number
+j00zek.vfd_show_curr_pname display current event
+j00zek.channellist_loop_begining_end loop lists
+j00zek.channellist_name_descr display event on channels list
+j00zek.vfd_recicon_nostandby turn rec icon off in standy
+j00zek.vfd_recicon_always rec icon always on
+j00zek.vfd_recicon recording icon
+j00zek.vfd_recicon_hint recording icon settings
+j00zek.restarting_softcam Restart softcam
+j00zek.colorthememenu_skins Standard skins
+j00zek.colorthememenu_userskins User skins
