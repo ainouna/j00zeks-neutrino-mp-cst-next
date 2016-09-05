@@ -830,6 +830,7 @@ struct SNeutrinoSettings
 #if HAVE_SPARK_HARDWARE || HAVE_DUCKBOX_HARDWARE
 	int lcd_vfd_scroll;
 	int lcd_vfd_recicon;
+	int lcd_vfd_size;
 #endif
 	int led_tv_mode;
 	int led_standby_mode;

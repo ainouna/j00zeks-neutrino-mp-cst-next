@@ -924,6 +924,10 @@ int CNeutrinoApp::loadSetup(const char * fname)
 #if HAVE_DUCKBOX_HARDWARE || BOXMODEL_SPARK7162
 	g_settings.lcd_vfd_scroll = configfile.getInt32("lcd_vfd_scroll", 1);
 	g_settings.lcd_vfd_recicon = configfile.getInt32("lcd_vfd_recicon", 0);
+	if ((!strncasecmp(j00zekBoxType, "arivalink200", 12)) || (!strncasecmp(j00zekBoxType, "ArivaLink200", 12)))
+		g_settings.lcd_vfd_size = configfile.getInt32("lcd_vfd_size", 16);
+	else
+		g_settings.lcd_vfd_size = configfile.getInt32("lcd_vfd_size", 0);
 #endif
 
 	//Picture-Viewer
@@ -1511,6 +1515,7 @@ void CNeutrinoApp::saveSetup(const char * fname)
 #if HAVE_DUCKBOX_HARDWARE || BOXMODEL_SPARK7162
 	configfile.setInt32("lcd_vfd_scroll", g_settings.lcd_vfd_scroll);
 	configfile.setInt32("lcd_vfd_recicon", g_settings.lcd_vfd_recicon);
+	configfile.setInt32("lcd_vfd_size", g_settings.lcd_vfd_size);
 #endif
 
 	//Picture-Viewer
@@ -2600,7 +2605,7 @@ void CNeutrinoApp::RealRun()
 	//activating infoclock
 	InfoClock = CInfoClock::getInstance();
 
-	if(g_settings.power_standby || init_cec_setting)
+	if(g_settings.power_standby || init_cec_setting || (access("/var/etc/NinStandby", F_OK) == 0) ) //put tuner in standby when it was in standby before lost power
 		standbyMode(true, true);
 
 	//cCA::GetInstance()->Ready(true);

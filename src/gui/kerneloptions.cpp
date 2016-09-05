@@ -288,9 +288,14 @@ void CKernelOptions::save()
 			if (modules[i].active) {
 				for (unsigned int j = 0; j < modules[i].moduleList.size(); j++)
 					if (modules[i].moduleList[j].second.length())
-						fprintf(f, "insmod /lib/modules/%s.ko %s\n", modules[i].moduleList[j].first.c_str(), modules[i].moduleList[j].second.c_str());
+						fprintf(f, "[ $(grep -c %s </proc/modules) -eq 0 ] && insmod /lib/modules/%s.ko %s\n",
+							modules[i].moduleList[j].first.c_str(),
+							modules[i].moduleList[j].first.c_str(),
+							modules[i].moduleList[j].second.c_str());
 					else
-						fprintf(f, "insmod /lib/modules/%s.ko\n", modules[i].moduleList[j].first.c_str());
+						fprintf(f, "[ $(grep -c %s </proc/modules) -eq 0 ] && insmod /lib/modules/%s.ko\n",
+							modules[i].moduleList[j].first.c_str(),
+							modules[i].moduleList[j].first.c_str());
 			}
 		}
 		fclose(f);

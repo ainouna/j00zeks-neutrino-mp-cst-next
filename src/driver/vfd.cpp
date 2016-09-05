@@ -71,6 +71,7 @@ struct vfd_ioctl_data {
 };
 
 /* ########## j00zek starts ########## */
+extern char j00zekBoxType[32];
 char grcstype[96] = { };
 static int VFDLENGTH = 16; //the standard value
 static bool isAriva = false;
@@ -93,7 +94,7 @@ void j00zek_get_vfd_config()
 		close(myFile);
 	}
 	if (len > 0) {
-		j00zekDBG(J00ZEK_DBG,"[j00zek_get_vfd_config] grcstype content:\n%s\n", grcstype);
+		j00zekDBG(J00ZEK_DBG,"[j00zek_get_vfd_config] j00zekBoxType=%s, grcstype content:\n%s\n",j00zekBoxType , grcstype);
 		grcstype[len] = 0;
 		char *p = strstr(grcstype, "vfdsize=");
 		if (p && sscanf(p, "vfdsize=%d", &h0) == 1)
