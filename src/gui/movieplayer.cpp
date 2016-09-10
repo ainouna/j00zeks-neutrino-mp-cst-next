@@ -521,7 +521,7 @@ void CMoviePlayerGui::fillPids()
 	if (p_movie_info == NULL)
 		return;
 
-	vpid = p_movie_info->epgVideoPid;
+	vpid = p_movie_info->VideoPid;
 	vtype = p_movie_info->VideoType;
 	numpida = 0; currentapid = 0;
 	numpids = 0;
@@ -529,7 +529,7 @@ void CMoviePlayerGui::fillPids()
 	currentttxsub = "";
 	/* FIXME: better way to detect TS recording */
 	if (!p_movie_info->audioPids.empty()) {
-		currentapid = p_movie_info->audioPids[0].epgAudioPid;
+		currentapid = p_movie_info->audioPids[0].AudioPid;
 		currentac3 = p_movie_info->audioPids[0].atype;
 	} else if (!vpid) {
 		is_file_player = true;
@@ -537,13 +537,13 @@ void CMoviePlayerGui::fillPids()
 	}
 	for (unsigned int i = 0; i < p_movie_info->audioPids.size(); i++) {
 		unsigned int j;
-		for (j = 0; j < numpida && p_movie_info->audioPids[i].epgAudioPid != apids[j]; j++);
+		for (j = 0; j < numpida && p_movie_info->audioPids[i].AudioPid != apids[j]; j++);
 		if (j == numpida) {
-			apids[i] = p_movie_info->audioPids[i].epgAudioPid;
+			apids[i] = p_movie_info->audioPids[i].AudioPid;
 			ac3flags[i] = p_movie_info->audioPids[i].atype;
 			numpida++;
 			if (p_movie_info->audioPids[i].selected) {
-				currentapid = p_movie_info->audioPids[i].epgAudioPid;
+				currentapid = p_movie_info->audioPids[i].AudioPid;
 				currentac3 = p_movie_info->audioPids[i].atype;
 			}
 			if (numpida == REC_MAX_APIDS)
@@ -834,7 +834,7 @@ void* CMoviePlayerGui::bgPlayThread(void *arg)
 
 	int eof = 0, pos = 0;
 	unsigned char *chid = new unsigned char[sizeof(t_channel_id)];
-	*(t_channel_id*)chid = mp->movie_info.epgId;
+	*(t_channel_id*)chid = mp->movie_info.channelId;
 
 	bool started = mp->StartWebtv();
 	printf("%s: started: %d\n", __func__, started);fflush(stdout);
@@ -1174,8 +1174,8 @@ bool CMoviePlayerGui::PlayBackgroundStart(const std::string &file, const std::st
 	instance_bg->cookie_header = cookie_header;
 
 	instance_bg->movie_info.epgTitle = name;
-	instance_bg->movie_info.epgChannel = realUrl;
-	instance_bg->movie_info.epgId = chan;
+	instance_bg->movie_info.channelName = realUrl;
+	instance_bg->movie_info.channelId = chan;
 	instance_bg->p_movie_info = &movie_info;
 
 	numpida = 0; currentapid = 0;
@@ -1286,7 +1286,7 @@ bool CMoviePlayerGui::PlayFileStart(void)
 		}
 
 		duration = p_movie_info->length * 60 * 1000;
-		int percent = CZapit::getInstance()->GetPidVolume(p_movie_info->epgId, currentapid, currentac3 == 1);
+		int percent = CZapit::getInstance()->GetPidVolume(p_movie_info->channelId, currentapid, currentac3 == 1);
 		CZapit::getInstance()->SetVolumePercent(percent);
 #if HAVE_SPARK_HARDWARE || HAVE_DUCKBOX_HARDWARE
 		CScreenSetup cSS;
@@ -1306,7 +1306,7 @@ bool CMoviePlayerGui::PlayFileStart(void)
 #ifdef ENABLE_GRAPHLCD
 	nGLCD::MirrorOSD(false);
 	if (p_movie_info)
-		nGLCD::lockChannel(p_movie_info->epgChannel, p_movie_info->epgTitle);
+		nGLCD::lockChannel(p_movie_info->channelName, p_movie_info->epgTitle);
 	else {
 		glcd_play = true;
 		nGLCD::lockChannel(g_Locale->getText(LOCALE_MOVIEPLAYER_HEAD), file_name.c_str(), file_prozent);
@@ -1334,13 +1334,13 @@ bool CMoviePlayerGui::PlayFileStart(void)
 		if (p_movie_info)
 			for (unsigned int i = 0; i < numpida; i++) {
 				unsigned int j, asize = p_movie_info->audioPids.size();
-				for (j = 0; j < asize && p_movie_info->audioPids[j].epgAudioPid != apids[i]; j++);
+				for (j = 0; j < asize && p_movie_info->audioPids[j].AudioPid != apids[i]; j++);
 				if (j == asize) {
-					EPG_AUDIO_PIDS pids;
-					pids.epgAudioPid = apids[i];
+					AUDIO_PIDS pids;
+					pids.AudioPid = apids[i];
 					pids.selected = 0;
 					pids.atype = ac3flags[i];
-					pids.epgAudioPidName = language[i];
+					pids.AudioPidName = language[i];
 					p_movie_info->audioPids.push_back(pids);
 				}
 			}
@@ -1357,7 +1357,7 @@ bool CMoviePlayerGui::PlayFileStart(void)
 			int i;
 			int towait = (timeshift == TSHIFT_MODE_ON) ? TIMESHIFT_SECONDS+1 : TIMESHIFT_SECONDS;
 			int cnt = 500;
-			if (IS_WEBTV(movie_info.epgId)) {
+			if (IS_WEBTV(movie_info.channelId)) {
 				videoDecoder->setBlank(false);
 				cnt = 200;
 				towait = 20;
@@ -1489,7 +1489,7 @@ void CMoviePlayerGui::PlayFileLoop(void)
 	{
 #ifdef ENABLE_GRAPHLCD
 		if (p_movie_info)
-			nGLCD::lockChannel(p_movie_info->epgChannel, p_movie_info->epgTitle, duration ? (100 * position / duration) : 0);
+			nGLCD::lockChannel(p_movie_info->channelName, p_movie_info->epgTitle, duration ? (100 * position / duration) : 0);
 		else {
 			glcd_play = true;
 			nGLCD::lockChannel(g_Locale->getText(LOCALE_MOVIEPLAYER_HEAD), file_name.c_str(), file_prozent);
@@ -1916,7 +1916,7 @@ void CMoviePlayerGui::PlayFileLoop(void)
 				makeScreenShot(true);
 		} else if (msg == CRCInput::RC_yellow) {
 			showFileInfos();
-		} else if (msg == CRCInput::RC_sat || msg == CRCInput::RC_favorites || msg == CRCInput::RC_www) {
+		} else if (CNeutrinoApp::getInstance()->listModeKey(msg)) {
 			//FIXME do nothing ?
 		} else if (msg == (neutrino_msg_t) CRCInput::RC_setup) {
 			CNeutrinoApp::getInstance()->handleMsg(NeutrinoMessages::SHOW_MAINMENU, 0);
@@ -2047,8 +2047,8 @@ void CMoviePlayerGui::callInfoViewer(bool init_vzap_it)
 				CVFD::getInstance()->showServicename(movie_info.epgTitle.c_str());
 				continue;
 			}
-			if (movie_info.epgChannel.empty() && !strcasecmp("artist", key.c_str())) {
-				movie_info.epgChannel = isUTF8(values[i]) ? values[i] : convertLatin1UTF8(values[i]);
+			if (movie_info.channelName.empty() && !strcasecmp("artist", key.c_str())) {
+				movie_info.channelName = isUTF8(values[i]) ? values[i] : convertLatin1UTF8(values[i]);
 				continue;
 			}
 			if (movie_info.epgInfo1.empty() && !strcasecmp("album", key.c_str())) {
@@ -2056,11 +2056,11 @@ void CMoviePlayerGui::callInfoViewer(bool init_vzap_it)
 				continue;
 			}
 		}
-		if (!movie_info.epgChannel.empty() || !movie_info.epgTitle.empty())
+		if (!movie_info.channelName.empty() || !movie_info.epgTitle.empty())
 			p_movie_info = &movie_info;
 #ifdef ENABLE_GRAPHLCD
 		if (p_movie_info)
-			nGLCD::lockChannel(p_movie_info->epgChannel, p_movie_info->epgTitle);
+			nGLCD::lockChannel(p_movie_info->channelName, p_movie_info->epgTitle);
 #endif
 	}
 
@@ -2081,7 +2081,7 @@ void CMoviePlayerGui::callInfoViewer(bool init_vzap_it)
 			}
 		}
 
-		std::string channelName = mi->epgChannel;
+		std::string channelName = mi->channelName;
 		if (channelName.empty())
 			channelName = pretty_name;
 
@@ -2091,7 +2091,7 @@ void CMoviePlayerGui::callInfoViewer(bool init_vzap_it)
 
 		CVFD::getInstance()->ShowText(channelTitle.c_str());
 
-		g_InfoViewer->showMovieTitle(playstate, mi->epgEpgId >>16, channelName, mi->epgTitle, mi->epgInfo1,
+		g_InfoViewer->showMovieTitle(playstate, mi->epgId >>16, channelName, mi->epgTitle, mi->epgInfo1,
 			duration, position, repeat_mode, init_vzap_it ? 0 /*IV_MODE_DEFAULT*/ : 1 /*IV_MODE_VIRTUAL_ZAP*/);
 		unlink("/tmp/cover.jpg");
 		return;
@@ -2109,8 +2109,8 @@ bool CMoviePlayerGui::getAudioName(int apid, std::string &apidtitle)
 		return false;
 
 	for (int i = 0; i < (int)p_movie_info->audioPids.size(); i++) {
-		if (p_movie_info->audioPids[i].epgAudioPid == apid && !p_movie_info->audioPids[i].epgAudioPidName.empty()) {
-			apidtitle = p_movie_info->audioPids[i].epgAudioPidName;
+		if (p_movie_info->audioPids[i].AudioPid == apid && !p_movie_info->audioPids[i].AudioPidName.empty()) {
+			apidtitle = p_movie_info->audioPids[i].AudioPidName;
 			return true;
 		}
 	}
@@ -2222,11 +2222,11 @@ void CMoviePlayerGui::selectAudioPid()
 	if (p_movie_info && numpida <= p_movie_info->audioPids.size()) {
 		APIDSelector.addItem(new CMenuSeparator(CMenuSeparator::LINE | CMenuSeparator::STRING, LOCALE_AUDIOMENU_VOLUME_ADJUST));
 
-		CVolume::getInstance()->SetCurrentChannel(p_movie_info->epgId);
+		CVolume::getInstance()->SetCurrentChannel(p_movie_info->channelId);
 		CVolume::getInstance()->SetCurrentPid(currentapid);
 		for (uint i=0; i < numpida; i++) {
-			percent[i] = CZapit::getInstance()->GetPidVolume(p_movie_info->epgId, apids[i], ac3flags[i]);
-			APIDSelector.addItem(new CMenuOptionNumberChooser(p_movie_info->audioPids[i].epgAudioPidName,
+			percent[i] = CZapit::getInstance()->GetPidVolume(p_movie_info->channelId, apids[i], ac3flags[i]);
+			APIDSelector.addItem(new CMenuOptionNumberChooser(p_movie_info->audioPids[i].AudioPidName,
 						&percent[i], currentapid == apids[i],
 						0, 999, CVolume::getInstance()));
 		}
