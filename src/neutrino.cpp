@@ -1971,14 +1971,14 @@ void CNeutrinoApp::CmdParser(int argc, char **argv)
 			dprintf(DEBUG_NORMAL, "j00zekBoxType: %s\n", j00zekBoxType);
 			x++;
 		}
-		else if ( !strcmp(argv[x], "----vfdsize") && (x+1 < argc)) {
+		else if ( !strcmp(argv[x], "--vfdsize") && (x+1 < argc)) {
 			j00zekVFDsize = atoi(argv[x+ 1]);
 			dprintf(DEBUG_NORMAL, "j00zekVFDsize: %d\n", j00zekVFDsize);
 			x++;
 		}
 		else {
 			dprintf(DEBUG_NORMAL, "Usage: neutrino [-u | --enable-update] "
-					      "[-v | --verbose 0..3] [-xd] [-sd] [-zd] [--disablePIP] [--boxtype <name>]\n");
+					      "[-v | --verbose 0..3] [-xd] [-sd] [-zd] [--disablePIP] [--boxtype <name>] [--vfdsize <size>]\n");
 #if HAVE_SPARK_HARDWARE || HAVE_DUCKBOX_HARDWARE
 			exit(CNeutrinoApp::REBOOT);
 #else
