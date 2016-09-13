@@ -116,6 +116,7 @@
 #include "gui/screensetup.h"
 int j00zekPIPenabled=1;
 char j00zekBoxType[32]={ };
+int j00zekVFDsize=0;
 #endif
 #include <system/set_threadname.h>
 #include <system/ytcache.h>
@@ -924,10 +925,7 @@ int CNeutrinoApp::loadSetup(const char * fname)
 #if HAVE_DUCKBOX_HARDWARE || BOXMODEL_SPARK7162
 	g_settings.lcd_vfd_scroll = configfile.getInt32("lcd_vfd_scroll", 1);
 	g_settings.lcd_vfd_recicon = configfile.getInt32("lcd_vfd_recicon", 0);
-	if ((!strncasecmp(j00zekBoxType, "arivalink200", 12)) || (!strncasecmp(j00zekBoxType, "ArivaLink200", 12)))
-		g_settings.lcd_vfd_size = configfile.getInt32("lcd_vfd_size", 16);
-	else
-		g_settings.lcd_vfd_size = configfile.getInt32("lcd_vfd_size", 0);
+	g_settings.lcd_vfd_size = configfile.getInt32("lcd_vfd_size", j00zekVFDsize );
 #endif
 
 	//Picture-Viewer
@@ -1515,7 +1513,7 @@ void CNeutrinoApp::saveSetup(const char * fname)
 #if HAVE_DUCKBOX_HARDWARE || BOXMODEL_SPARK7162
 	configfile.setInt32("lcd_vfd_scroll", g_settings.lcd_vfd_scroll);
 	configfile.setInt32("lcd_vfd_recicon", g_settings.lcd_vfd_recicon);
-	configfile.setInt32("lcd_vfd_size", g_settings.lcd_vfd_size);
+	configfile.setInt32("lcd_vfd_size", j00zekVFDsize);
 #endif
 
 	//Picture-Viewer
@@ -1971,6 +1969,11 @@ void CNeutrinoApp::CmdParser(int argc, char **argv)
 			//j00zekBoxType = argv[x+ 1];
 			strcpy(j00zekBoxType, argv[x+ 1]);
 			dprintf(DEBUG_NORMAL, "j00zekBoxType: %s\n", j00zekBoxType);
+			x++;
+		}
+		else if ( !strcmp(argv[x], "----vfdsize") && (x+1 < argc)) {
+			j00zekVFDsize = atoi(argv[x+ 1]);
+			dprintf(DEBUG_NORMAL, "j00zekVFDsize: %d\n", j00zekVFDsize);
 			x++;
 		}
 		else {
