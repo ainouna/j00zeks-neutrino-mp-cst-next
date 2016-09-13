@@ -72,8 +72,7 @@ struct vfd_ioctl_data {
 
 /* ########## j00zek starts ########## */
 extern char j00zekBoxType[32];
-char grcstype[96] = { };
-static int VFDLENGTH = 16; //the standard value
+extern int j00zekVFDsize;
 static bool isAriva = false;
 static bool isSpark7162 = false;
 static bool isADB5800VFD = false;
@@ -85,46 +84,33 @@ static int  PowerOnIconID = -1;
 
 void j00zek_get_vfd_config()
 {
-	//char buf[96] = { };
-	int len = -1;
-	int h0;
-	int myFile = open("/var/grun/grcstype", O_RDONLY);
-	if (myFile != -1) {
-		len = read(myFile, grcstype, sizeof(grcstype) - 1);
-		close(myFile);
+	j00zekDBG(J00ZEK_DBG,"[j00zek_get_vfd_config] kBoxType=%s, VFDsize=%d",j00zekBoxType, j00zekVFDsize);
+	if  (strstr(j00zekBoxType, "SPARK7162")) {
+		isSpark7162 = true;
+		RecIconID = 0x07;
+		StandbyIconID = 0x24;
 	}
-	if (len > 0) {
-		j00zekDBG(J00ZEK_DBG,"[j00zek_get_vfd_config] j00zekBoxType=%s, grcstype content:\n%s\n",j00zekBoxType , grcstype);
-		grcstype[len] = 0;
-		char *p = strstr(grcstype, "vfdsize=");
-		if (p && sscanf(p, "vfdsize=%d", &h0) == 1)
-			VFDLENGTH = h0;
-		if  (strstr(grcstype, "rcstype=SPARK7162")) {
-			isSpark7162 = true;
-			RecIconID = 0x07;
-			StandbyIconID = 0x24;
-		}
-		else if  (strstr(grcstype, "rcstype=ArivaLink200"))
-			isAriva = true;
-		else if  (strstr(grcstype, "rcstype=ESI88")) {
-			isESI88 = true;
-			RecIconID = 1;
-			PowerOnIconID = 2;
-		}
-		else if  (strstr(grcstype, "rcstype=ADB5800") && VFDLENGTH == 16) {
-			isADB5800VFD = true;
-			StandbyIconID = 1;
-			RecIconID = 3;
-			PowerOnIconID = 2;
-		}
-		else if  (strstr(grcstype, "rcstype=ADB5800") && VFDLENGTH != 16) {
-		    isADB5800LED = true;
-			StandbyIconID = 1;
-			RecIconID = 3;
-			PowerOnIconID = 2;
-		}
+	else if  (strstr(j00zekBoxType, "ArivaLink200"))
+		isAriva = true;
+	else if  (strstr(j00zekBoxType, "ESI88")) {
+		isESI88 = true;
+		RecIconID = 1;
+		PowerOnIconID = 2;
 	}
-	j00zekDBG(J00ZEK_DBG,"%s:%s config: size=%d,isAriva=%d,isSpark7162=%d,isADB5800VFD=%d,isADB5800LED=%d,isESI88=%d\n", "CVFD::", __func__, h0, isAriva, isSpark7162, isADB5800VFD, isADB5800LED,isESI88);
+	else if  (strstr(j00zekBoxType, "ADB5800") && j00zekVFDsize == 16) {
+		isADB5800VFD = true;
+		StandbyIconID = 1;
+		RecIconID = 3;
+		PowerOnIconID = 2;
+	}
+	else if  (strstr(j00zekBoxType, "ADB5800") && j00zekVFDsize != 16) {
+	    isADB5800LED = true;
+		StandbyIconID = 1;
+		RecIconID = 3;
+		PowerOnIconID = 2;
+	}
+		
+	j00zekDBG(J00ZEK_DBG,",isAriva=%d,isSpark7162=%d,isADB5800VFD=%d,isADB5800LED=%d,isESI88=%d\n", isAriva, isSpark7162, isADB5800VFD, isADB5800LED,isESI88);
 	return;
 }
 
@@ -138,8 +124,8 @@ boxtype=NONE		NONE		ESI88	BSLA|BZZB
 bool CVFD::hasConfigOption(char *str)
 {
 	int len = strlen(str);
-	j00zekDBG(J00ZEK_DBG,"hasConfigOption\n%s\n%s\n%d\n",grcstype,str,len);
-	if (len > 0 && strstr(grcstype, str))
+	j00zekDBG(J00ZEK_DBG,"hasConfigOption\n%s\n%s\n%d\n",j00zekBoxType,str,len);
+	if (len > 0 && strstr(j00zekBoxType, str))
 		    return true;
 	return false;
 }
@@ -224,9 +210,9 @@ void SetIcon(int icon, bool status)
 static void ShowNormalText(char * str, bool fromScrollThread = false)
 {
 	//CVFD:count_down(DEBUG_DEBUG,"j00zek>%s:%s >>>\n", "CVFD::", __func__);
-	if (VFDLENGTH == 0)
+	if (j00zekVFDsize == 0)
 	{
-		j00zekDBG(J00ZEK_DBG,"[CVFD] ShowNormalText:VFDLENGTH=0 exiting\n");
+		j00zekDBG(J00ZEK_DBG,"[CVFD] ShowNormalText:j00zekVFDsize=0 exiting\n");
 		return;
 	}
 	if (blocked)
@@ -247,9 +233,9 @@ static void ShowNormalText(char * str, bool fromScrollThread = false)
 			vfd_scrollText = 0;
 		}
 	}
-	if ((strlen(str) > VFDLENGTH && !fromScrollThread) && (g_settings.lcd_vfd_scroll >= 1))
+	if ((strlen(str) > j00zekVFDsize && !fromScrollThread) && (g_settings.lcd_vfd_scroll >= 1))
 	{
-		j00zekDBG(J00ZEK_DBG,"if ((strlen(str) > VFDLENGTH && !fromScrollThread) && (g_settings.lcd_vfd_scroll >= 1))\n");
+		j00zekDBG(J00ZEK_DBG,"if ((strlen(str) > j00zekVFDsize && !fromScrollThread) && (g_settings.lcd_vfd_scroll >= 1))\n");
 		CVFD::getInstance()->ShowScrollText(str);
 		return;
 	}
@@ -258,19 +244,19 @@ static void ShowNormalText(char * str, bool fromScrollThread = false)
 	if (!fromScrollThread)
 	{
 		j00zekDBG(J00ZEK_DBG,"if (!fromScrollThread)\n");
-		memcpy (data.data, str, VFDLENGTH);
+		memcpy (data.data, str, j00zekVFDsize);
 		data.start = 0;
-		if ((strlen(str) % 2) == 1 && VFDLENGTH > 8) // do not center on small displays
-			data.length = VFDLENGTH-1;
+		if ((strlen(str) % 2) == 1 && j00zekVFDsize > 8) // do not center on small displays
+			data.length = j00zekVFDsize-1;
 		else
-			data.length = VFDLENGTH;
+			data.length = j00zekVFDsize;
 	}
 	else
 	{
 		j00zekDBG(J00ZEK_DBG,"if (!fromScrollThread)..else\n");
-		memcpy ( data.data, str, VFDLENGTH);
+		memcpy ( data.data, str, j00zekVFDsize);
 		data.start = 0;
-		data.length = VFDLENGTH;
+		data.length = j00zekVFDsize;
 	}
 	write_to_vfd(VFDDISPLAYCHARS, &data);
 	return;
@@ -309,17 +295,17 @@ void* CVFD::ThreadScrollText(void * arg)
 	int i;
 	char *str = (char *)arg;
 	int len = strlen(str);
-	char out[VFDLENGTH+1];
-	char buf[VFDLENGTH+65];
+	char out[j00zekVFDsize+1];
+	char buf[j00zekVFDsize+65];
 
-	memset(out, 0, VFDLENGTH+1);
+	memset(out, 0, j00zekVFDsize+1);
 
 	int retries = g_settings.lcd_vfd_scroll;
 
-	if (len > VFDLENGTH)
+	if (len > j00zekVFDsize)
 	{
 		printf("CVFD::ThreadScrollText: [%s], length %d\n", str, len);
-		memset(buf, ' ', (len + VFDLENGTH));
+		memset(buf, ' ', (len + j00zekVFDsize));
 		memcpy(buf, str, len);
 
 		while(retries--)
@@ -329,13 +315,13 @@ void* CVFD::ThreadScrollText(void * arg)
 			for (i = 0; i <= (len-1); i++)
 			{
 				// scroll text until end
-				memcpy(out, buf+i, VFDLENGTH);
+				memcpy(out, buf+i, j00zekVFDsize);
 				ShowNormalText(out,true);
 				usleep(SCROLL_TIME*2);
 			}
 		}
 	}
-	memcpy(out, str, VFDLENGTH); // display first VFDLENGTH chars after scrolling
+	memcpy(out, str, j00zekVFDsize); // display first j00zekVFDsize chars after scrolling
 	ShowNormalText(out,true);
 
 	pthread_exit(0);
@@ -352,7 +338,7 @@ CVFD::CVFD()
 	else
 		supports_brightness = true;
 
-	if (VFDLENGTH == 4)
+	if (j00zekVFDsize == 4)
 		support_text = false;
 	else
 		support_text = true;
@@ -576,7 +562,7 @@ void CVFD::showTime(bool force)
 			if(force || ( TIMING_INFOBAR_counter == 0 && ((hour != t->tm_hour) || (minute != t->tm_min))) ) {
 				hour = t->tm_hour;
 				minute = t->tm_min;
-				if (VFDLENGTH==4)
+				if (j00zekVFDsize==4)
 				    strftime(timestr, 5, "%H%M", t);
 				else
 				    strftime(timestr, 6, "%H:%M", t);
@@ -652,9 +638,9 @@ void CVFD::showVolume(const char vol, const bool force_update)
 		if(oldpp != pp)
 		{
 			char vol_chr[64] = "";
-			if (VFDLENGTH==4)
+			if (j00zekVFDsize==4)
 				snprintf(vol_chr, sizeof(vol_chr)-1, "v%3d", (int)vol);
-			else if (VFDLENGTH==8)
+			else if (j00zekVFDsize==8)
 				snprintf(vol_chr, sizeof(vol_chr)-1, "VOL %d%%", (int)vol);
 			else
 				snprintf(vol_chr, sizeof(vol_chr)-1, "Volume: %d%%", (int)vol);
@@ -907,9 +893,9 @@ void CVFD::Clear()
 {
 	j00zekDBG(DEBUG_DEBUG,"j00zek>CVFD::Clear()\n");
 	if(fd < 0) return;
-	if (VFDLENGTH == 4)
+	if (g_settings.lcd_vfd_size == 4)
 	  ShowText("    ");
-	else if (VFDLENGTH == 8)
+	else if (g_settings.lcd_vfd_size == 8)
 	  ShowText("        ");
 	else
 	  ShowText("                ");
@@ -973,8 +959,8 @@ void CVFD::ShowText(const char * str )
 		g_str[62] = '.';
 		g_str[63] = '\0';
 		il = 63;
-	} /*else if (il < VFDLENGTH && !isAriva && !isSpark7162) { //workarround for poor vfd drivers
-		while (il < VFDLENGTH) {
+	} /*else if (il < j00zekVFDsize && !isAriva && !isSpark7162) { //workarround for poor vfd drivers
+		while (il < j00zekVFDsize) {
 			g_str[il] = ' ';
 			il += 1;
 		}
