@@ -659,7 +659,7 @@ void CVFD::showMenuText(const int position, const char * ptext, const int /*high
 {
 	//j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>>\n", "CVFD::", __func__);
 	if(fd < 0) return;
-	if (mode != MODE_MENU_UTF8)
+	if ((mode != MODE_MENU_UTF8) || !g_settings.lcd_show_menu)
 		return;
 
 	ShowText(ptext);

@@ -876,7 +876,7 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	g_settings.flashupdate_createimage_add_spare  = configfile.getInt32( "flashupdate_createimage_add_spare",  0);
 	g_settings.flashupdate_createimage_add_kernel = configfile.getInt32( "flashupdate_createimage_add_kernel", 1);
 
-	g_settings.image_settings_backup_path = configfile.getString("image_settings_backup_path", "/swap/backup");
+	g_settings.image_settings_backup_path = configfile.getString("image_settings_backup_path", "/");
 	g_settings.softupdate_url_file      = configfile.getString("softupdate_url_file", "/var/etc/update.urls");
 	g_settings.softupdate_proxyserver   = configfile.getString("softupdate_proxyserver", "" );
 	g_settings.softupdate_proxyusername = configfile.getString("softupdate_proxyusername", "" );
@@ -923,10 +923,13 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	g_settings.lcd_setting_dim_brightness = configfile.getInt32("lcd_dim_brightness", 0);
 	g_settings.lcd_info_line = configfile.getInt32("lcd_info_line", 0);//channel name or clock
 #if HAVE_DUCKBOX_HARDWARE || BOXMODEL_SPARK7162
-	if ( j00zekVFDsize <= 4)
+	if ( j00zekVFDsize <= 4) {
 		g_settings.lcd_vfd_scroll = configfile.getInt32("lcd_vfd_scroll", 0);
-	else
+		g_settings.lcd_show_menu = configfile.getInt32("lcd_show_menu", 0);
+	} else {
 		g_settings.lcd_vfd_scroll = configfile.getInt32("lcd_vfd_scroll", 1);
+		g_settings.lcd_show_menu = configfile.getInt32("lcd_show_menu", 1);
+	}
 	g_settings.lcd_vfd_recicon = configfile.getInt32("lcd_vfd_recicon", 0);
 	g_settings.lcd_vfd_size = configfile.getInt32("lcd_vfd_size", j00zekVFDsize );
 #endif
@@ -1517,6 +1520,7 @@ void CNeutrinoApp::saveSetup(const char * fname)
 	configfile.setInt32("lcd_vfd_scroll", g_settings.lcd_vfd_scroll);
 	configfile.setInt32("lcd_vfd_recicon", g_settings.lcd_vfd_recicon);
 	configfile.setInt32("lcd_vfd_size", j00zekVFDsize);
+	configfile.setInt32("lcd_show_menu", g_settings.lcd_show_menu);
 #endif
 
 	//Picture-Viewer

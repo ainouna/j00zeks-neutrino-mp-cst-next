@@ -2670,5 +2670,6 @@ const char * locale_real_names[] =
 	"j00zek.restarting_softcam",
 	"j00zek.colorthememenu_skins",
 	"j00zek.colorthememenu_userskins",
+	"j00zek.lcdmenu_showmenu",
 };
 #endif

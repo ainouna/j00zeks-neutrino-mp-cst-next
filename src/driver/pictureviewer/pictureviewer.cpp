@@ -560,7 +560,7 @@ bool CPictureViewer::GetLogoName(const uint64_t& channel_id, const std::string& 
 
 	sprintf(strChanId, "%llx", channel_id & 0xFFFFFFFFFFFFULL);
 
-	std::string strLogoE2[2] = { "", "" };
+	std::string strLogoE2[3] = { "", "" };
 	CZapitChannel * cc = NULL;
 	if (CNeutrinoApp::getInstance()->channelList)
 		cc = CNeutrinoApp::getInstance()->channelList->getChannel(channel_id);
@@ -590,21 +590,24 @@ bool CPictureViewer::GetLogoName(const uint64_t& channel_id, const std::string& 
 	start_pos = E2channelname.find("&"); if(start_pos != std::string::npos) E2channelname.replace(start_pos, 1, "and");
 	start_pos = E2channelname.find("*"); if(start_pos != std::string::npos) E2channelname.replace(start_pos, 1, "star");
 	
-	dprintf(DEBUG_DEBUG,"j00zek channel name %s > piconname (e2 convention) %s\n", ChannelName.c_str(), E2channelname.c_str() );
+	dprintf(DEBUG_DEBUG,"j00zek channel name %s > piconname (e2 convention) '%s'\n", ChannelName.c_str(), E2channelname.c_str() );
 	/* first the channel-id, then the channelname */
 	std::string strLogoName[3] = { E2channelname, (std::string)strChanId, ChannelName  };
 	/* first png, then jpg, then gif */
 	std::string strLogoExt[3] = { ".png", ".jpg" , ".gif" };
-	std::string dirs[2] = { g_settings.logo_hdd_dir, "/usr/local/share/enigma2/picon" };
+	
+	int dirsLen = 3; //number of items in below array
+	std::string dirs[3] = { g_settings.logo_hdd_dir, "/var/tuxbox/picons", "/usr/local/share/enigma2/picon" };
 
 	std::string tmp;
 
-	for (int k = 0; k < 2; k++) {
+	for (int k = 0; k < dirsLen; k++) {
 		if (dirs[k].length() < 1)
 			continue;
 		for (int i = 0; i < 3; i++)
 			for (int j = 0; j < 3; j++) {
 				tmp = dirs[k] + "/" + strLogoName[i] + strLogoExt[j];
+				dprintf(DEBUG_DEBUG,"searching for '%s'\n",tmp.c_str());
 				if (!access(tmp.c_str(), R_OK))
 					goto found;
 			}
@@ -612,6 +615,7 @@ bool CPictureViewer::GetLogoName(const uint64_t& channel_id, const std::string& 
 			continue;
 		for (int i = 0; i < 2; i++) {
 			tmp = dirs[k] + "/" + strLogoE2[i];
+			dprintf(DEBUG_DEBUG,"searching for '%s'\n",tmp.c_str());
 			if (!access(tmp.c_str(), R_OK))
 				goto found;
 		}

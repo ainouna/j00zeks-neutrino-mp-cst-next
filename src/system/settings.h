@@ -831,6 +831,7 @@ struct SNeutrinoSettings
 	int lcd_vfd_scroll;
 	int lcd_vfd_recicon;
 	int lcd_vfd_size;
+	int lcd_show_menu;
 #endif
 	int led_tv_mode;
 	int led_standby_mode;
