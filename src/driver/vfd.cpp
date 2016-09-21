@@ -235,7 +235,7 @@ static void ShowNormalText(char * str, bool fromScrollThread = false)
 	}
 	if ((strlen(str) > j00zekVFDsize && !fromScrollThread) && (g_settings.lcd_vfd_scroll >= 1))
 	{
-		j00zekDBG(J00ZEK_DBG,"if ((strlen(str) > j00zekVFDsize && !fromScrollThread) && (g_settings.lcd_vfd_scroll >= 1))\n");
+		//j00zekDBG(J00ZEK_DBG,"if ((strlen(str) > j00zekVFDsize && !fromScrollThread) && (g_settings.lcd_vfd_scroll >= 1))\n");
 		CVFD::getInstance()->ShowScrollText(str);
 		return;
 	}
@@ -243,7 +243,7 @@ static void ShowNormalText(char * str, bool fromScrollThread = false)
 	memset(data.data, ' ', 63);
 	if (!fromScrollThread)
 	{
-		j00zekDBG(J00ZEK_DBG,"if (!fromScrollThread)\n");
+		//j00zekDBG(J00ZEK_DBG,"if (!fromScrollThread)\n");
 		memcpy (data.data, str, j00zekVFDsize);
 		data.start = 0;
 		if ((strlen(str) % 2) == 1 && j00zekVFDsize > 8) // do not center on small displays
@@ -253,7 +253,7 @@ static void ShowNormalText(char * str, bool fromScrollThread = false)
 	}
 	else
 	{
-		j00zekDBG(J00ZEK_DBG,"if (!fromScrollThread)..else\n");
+		//j00zekDBG(J00ZEK_DBG,"if (!fromScrollThread)..else\n");
 		memcpy ( data.data, str, j00zekVFDsize);
 		data.start = 0;
 		data.length = j00zekVFDsize;
