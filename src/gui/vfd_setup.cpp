@@ -178,13 +178,18 @@ int CVfdSetup::showSetup()
 		vfds->addItem(lcd_clock_channelname_menu);
 
 #if HAVE_DUCKBOX_HARDWARE || BOXMODEL_SPARK7162
-		if (g_settings.lcd_vfd_size > 4)
+		if (g_settings.lcd_vfd_size > 4) {
 			vfds->addItem(new CMenuOptionNumberChooser(LOCALE_LCDMENU_VFD_SCROLL, &g_settings.lcd_vfd_scroll, true, 0, 999, this, 0, 0, NONEXISTANT_LOCALE, true));
-		//display menu items on vfd
-		vfds->addItem(new CMenuOptionChooser(LOCALE_J00ZEK_LCDMENU_SHOWMENU, &g_settings.lcd_show_menu, OPTIONS_OFF0_ON1_OPTIONS, OPTIONS_OFF0_ON1_OPTION_COUNT, vfd_enabled));
+			//display menu items on vfd
+			vfds->addItem(new CMenuOptionChooser(LOCALE_J00ZEK_LCDMENU_SHOWMENU, &g_settings.lcd_show_menu, OPTIONS_OFF0_ON1_OPTIONS, OPTIONS_OFF0_ON1_OPTION_COUNT, true));
+		} else {
+			vfds->addItem(new CMenuOptionNumberChooser(LOCALE_LCDMENU_VFD_SCROLL, &g_settings.lcd_vfd_scroll, true, 0, 999, this, 0, 0, NONEXISTANT_LOCALE, false));
+			//display menu items on vfd
+			vfds->addItem(new CMenuOptionChooser(LOCALE_J00ZEK_LCDMENU_SHOWMENU, &g_settings.lcd_show_menu, OPTIONS_OFF0_ON1_OPTIONS, OPTIONS_OFF0_ON1_OPTION_COUNT, false));
+		}
 
 		//recicon
-		CMenuOptionChooser* ri = new CMenuOptionChooser(LOCALE_LCDMENU_RECICON, &g_settings.lcd_vfd_recicon, LCDMENU_RECICON_OPTIONS, LCDMENU_RECICON_OPTION_COUNT, vfd_enabled);
+		CMenuOptionChooser* ri = new CMenuOptionChooser(LOCALE_LCDMENU_RECICON, &g_settings.lcd_vfd_recicon, LCDMENU_RECICON_OPTIONS, LCDMENU_RECICON_OPTION_COUNT, true);
 		ri->setHint("", LOCALE_MENU_HINT_VFD_RECICON);
 		vfds->addItem(ri);
 #else
