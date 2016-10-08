@@ -106,7 +106,7 @@ void CNetworkConfig::init_vars(void)
 
 	if(access(tmp, R_OK) == 0)
 		wireless = 1;
-	else if( strncmp(ifname.c_str(),"ra0",3) == 0) //j00zek ugly fix for different ralink driver structure
+	else if((strncmp(ifname.c_str(),"ra0",3) == 0) || (strncmp(ifname.c_str(),"wlan0",5) == 0)) //j00zek ugly fix for different ralink driver structure
 		wireless = 1;
 	if(wireless)
 		readWpaConfig();
