@@ -454,7 +454,7 @@ int CChannelList::doChannelMenu(void)
 int CChannelList::exec()
 {
 	displayNext = 0; // always start with current events
-	displayList = 0; //j00zek oways with EPG 1; // always start with event list
+	displayList = 0; //j00zek always with EPG 1; // always start with event list
 	int nNewChannel = show();
 	if ( nNewChannel > -1 && nNewChannel < (int) (*chanlist).size()) {
 		if(this->historyMode && (*chanlist)[nNewChannel]) {
@@ -2408,9 +2408,9 @@ void CChannelList::paint_events()
 void CChannelList::paint_events(CChannelEventList &evtlist)
 {
 	ffheight = g_Font[eventFont]->getHeight();
-	readEvents((*chanlist)[index]->getEpgID());
 	int firstRowY=0;
 	int nextRowsY=0;
+	//CChannelList::getInstance()->readEvents((*chanlist)[paint_events_index]->getEpgID());
 	if (NextEventsHeight > 0) {
 		firstRowY=NextEventsHeight;//j00zek przesuniecie pierwszej linii w trybie epg z programami
 		nextRowsY=ffheight;//j00zek przesuniecie nastepnych linii w trybie epg z programami
@@ -2418,10 +2418,8 @@ void CChannelList::paint_events(CChannelEventList &evtlist)
 	
 	if (infozone_width-firstRowY < ffheight)
 		return;
-	
 	frameBuffer->paintBoxRel(x+ width,y+ theight+pig_height+firstRowY, infozone_width, infozone_height - firstRowY,COL_MENUCONTENT_PLUS_0); //j00zek
-	frameBuffer->paintBoxRel(x+ width,y+ theight+pig_height, infozone_width, infozone_height,COL_MENUCONTENT_PLUS_0);
-
+	
 	char startTime[10];
 	int eventStartTimeWidth = 4 * g_Font[eventFont]->getMaxDigitWidth() + g_Font[eventFont]->getRenderWidth(":") + 5; // use a fixed value
 	int startTimeWidth = 0;
