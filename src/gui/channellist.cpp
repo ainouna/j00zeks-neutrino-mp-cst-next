@@ -49,6 +49,7 @@
 #include <driver/radiotext.h>
 
 #include <gui/color.h>
+#include <gui/color_custom.h>
 #include <gui/epgview.h>
 #include <gui/eventlist.h>
 #include <gui/infoviewer.h>
@@ -64,7 +65,6 @@
 #include <gui/infoclock.h>
 #include <system/settings.h>
 #include <system/set_threadname.h>
-#include <gui/customcolor.h>
 
 #include <gui/bouquetlist.h>
 #include <daemonc/remotecontrol.h>
@@ -500,7 +500,7 @@ void CChannelList::calcSize()
 	else
 		info_height = 0;
 	height = pig_on_win ?  frameBuffer->getScreenHeight(): frameBuffer->getScreenHeightRel();
-	height = height - info_height;
+	height = height - OFFSET_INTER - info_height;
 
 	// calculate x position
 	x = getScreenStartX(full_width);
@@ -518,7 +518,7 @@ void CChannelList::calcSize()
 	height = theight + listmaxshow*fheight + footerHeight;
 
 	// calculate y position
-	y = getScreenStartY(height + info_height);
+	y = getScreenStartY(height + OFFSET_INTER + info_height);
 
 	// calculate width/height of right info_zone and pip-box
 	//infozone_width = full_width - width;
@@ -997,7 +997,7 @@ void CChannelList::hide()
 		CChannelLogo = NULL;
 	}
 
-	frameBuffer->paintBackgroundBoxRel(x, y, full_width, height + info_height);
+	frameBuffer->paintBackgroundBoxRel(x, y, full_width, height + OFFSET_INTER + info_height);
 	clearItem2DetailsLine();
 	CInfoClock::getInstance()->enableInfoClock(!CInfoClock::getInstance()->isBlocked());
 	frameBuffer->blit();
@@ -1573,14 +1573,17 @@ void CChannelList::paintDetails(int index)
 	if (!g_settings.channellist_show_infobox)
 		return;
 
+	int ypos   = y + height + OFFSET_INTER;
+	int ypos_a = ypos + OFFSET_INNER_SMALL;
+
 	CChannelEvent *p_event = NULL;
 
 	//colored_events init
 	bool colored_event_C = (g_settings.theme.colored_events_channellist == 1);
 	bool colored_event_N = (g_settings.theme.colored_events_channellist == 2);
 
-	frameBuffer->paintBoxRel(x+1, y + height + 1, full_width-2, info_height - 2, COL_MENUCONTENTDARK_PLUS_0, RADIUS_LARGE);//round
-	frameBuffer->paintBoxFrame(x, y + height, full_width, info_height, 2, COL_MENUCONTENT_PLUS_6, RADIUS_LARGE);
+	frameBuffer->paintBoxRel(x, ypos, full_width, info_height, COL_MENUCONTENTDARK_PLUS_0, RADIUS_LARGE);
+	frameBuffer->paintBoxFrame(x, ypos, full_width, info_height, 2, COL_FRAME_PLUS_0, RADIUS_LARGE);
 
 	if ((*chanlist).empty())
 		return;
@@ -1630,7 +1633,7 @@ void CChannelList::paintDetails(int index)
 				text3= text3+ " - ";
 
 			xstart += g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->getRenderWidth(text3);
-			g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->RenderString(x+ 10, y+ height+ 5+ 2* fheight, full_width - 30- noch_len, text3, colored_event_C ? COL_COLORED_EVENTS_TEXT : COL_MENUCONTENTDARK_TEXT);
+			g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->RenderString(x+ 10, ypos_a + 2*fheight, full_width - 30- noch_len, text3, colored_event_C ? COL_COLORED_EVENTS_TEXT : COL_MENUCONTENTDARK_TEXT);
 		}
 
 		if (!(text2.empty())) {
@@ -1647,18 +1650,18 @@ void CChannelList::paintDetails(int index)
 				}
 			}
 #endif
-			g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->RenderString(x+ xstart, y+ height+ 5+ fdescrheight+ fheight, full_width- xstart- 30- noch_len, text2, colored_event_C ? COL_COLORED_EVENTS_TEXT : COL_MENUCONTENTDARK_TEXT);
+			g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->RenderString(x+ xstart, ypos_a + fdescrheight+ fheight, full_width- xstart- 30- noch_len, text2, colored_event_C ? COL_COLORED_EVENTS_TEXT : COL_MENUCONTENTDARK_TEXT);
 		}
 
-		g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->RenderString(x+ 10, y+ height+ 5+ fheight, full_width - 30 - seit_len, text1, colored_event_C ? COL_COLORED_EVENTS_TEXT : COL_MENUCONTENTDARK_TEXT);
-		g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->RenderString(x+ full_width- 10- seit_len, y+ height+ 5+    fheight, seit_len, cSeit, colored_event_C ? COL_COLORED_EVENTS_TEXT : COL_MENUCONTENTDARK_TEXT);
-		g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->RenderString(x+ full_width- 10- noch_len, y+ height+ 5+ fdescrheight+ fheight, noch_len, cNoch, colored_event_C ? COL_COLORED_EVENTS_TEXT : COL_MENUCONTENTDARK_TEXT);
+		g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->RenderString(x+ 10, ypos_a + fheight, full_width - 30 - seit_len, text1, colored_event_C ? COL_COLORED_EVENTS_TEXT : COL_MENUCONTENTDARK_TEXT);
+		g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->RenderString(x+ full_width- 10- seit_len, ypos_a + fheight              , seit_len, cSeit, colored_event_C ? COL_COLORED_EVENTS_TEXT : COL_MENUCONTENTDARK_TEXT);
+		g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->RenderString(x+ full_width- 10- noch_len, ypos_a + fdescrheight+ fheight, noch_len, cNoch, colored_event_C ? COL_COLORED_EVENTS_TEXT : COL_MENUCONTENTDARK_TEXT);
 	}
 	else if (IS_WEBTV((*chanlist)[index]->getChannelID())) {
-		g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->RenderString(x+ 10, y+ height+ 5+ fheight,                  full_width - 30, (*chanlist)[index]->getDesc(), colored_event_C ? COL_COLORED_EVENTS_TEXT : COL_MENUCONTENTDARK_TEXT, 0, true);
+		g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->RenderString(x+ 10, ypos_a + fheight,                  full_width - 30, (*chanlist)[index]->getDesc(), colored_event_C ? COL_COLORED_EVENTS_TEXT : COL_MENUCONTENTDARK_TEXT, 0, true);
 	}
 	if (IS_WEBTV((*chanlist)[index]->getChannelID())) {
-		g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->RenderString(x+ 10, y+ height+ 5+ 2*fheight + fdescrheight, full_width - 30, (*chanlist)[index]->getUrl(), COL_MENUCONTENTDARK_TEXT, 0, true);
+		g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->RenderString(x+ 10, ypos_a + 2*fheight + fdescrheight, full_width - 30, (*chanlist)[index]->getUrl(), COL_MENUCONTENTDARK_TEXT, 0, true);
 	} else if(g_settings.channellist_foot == 0) {
 		transponder t;
 		CServiceManager::getInstance()->GetTransponder((*chanlist)[index]->getTransponderId(), t);
@@ -1669,7 +1672,7 @@ void CChannelList::paintDetails(int index)
 		else
 			desc = desc + " (" + CServiceManager::getInstance()->GetSatelliteName((*chanlist)[index]->getSatellitePosition()) + ")";
 
-		g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->RenderString(x+ 10, y+ height+ 5+ 2*fheight +fdescrheight, full_width - 30, desc.c_str(), COL_MENUCONTENTDARK_TEXT);
+		g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->RenderString(x+ 10, ypos_a + 2*fheight +fdescrheight, full_width - 30, desc.c_str(), COL_MENUCONTENTDARK_TEXT);
 	}
 	else if( !displayNext && g_settings.channellist_foot == 1) { // next Event
 
@@ -1683,8 +1686,8 @@ void CChannelList::paintDetails(int index)
 			snprintf(buf, sizeof(buf), "%s", CurrentNext.next_name.c_str());
 			int from_len = g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->getRenderWidth(cFrom);
 
-			g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->RenderString(x+ 10, y+ height+ 5+ 2*fheight+ fdescrheight, full_width - 30 - from_len, buf, colored_event_N ? COL_COLORED_EVENTS_TEXT :COL_MENUCONTENTDARK_TEXT);
-			g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->RenderString(x+ full_width- 10- from_len, y+ height+ 5+ 2*fheight+ fdescrheight, from_len, cFrom, colored_event_N ? COL_COLORED_EVENTS_TEXT : COL_MENUCONTENTDARK_TEXT);
+			g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->RenderString(x+ 10, ypos_a + 2*fheight+ fdescrheight, full_width - 30 - from_len, buf, colored_event_N ? COL_COLORED_EVENTS_TEXT :COL_MENUCONTENTDARK_TEXT);
+			g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->RenderString(x+ full_width- 10- from_len, ypos_a + 2*fheight+ fdescrheight, from_len, cFrom, colored_event_N ? COL_COLORED_EVENTS_TEXT : COL_MENUCONTENTDARK_TEXT);
 		}
 	}
 }
@@ -1707,7 +1710,7 @@ void CChannelList::paintItem2DetailsLine (int pos)
 
 	int xpos  = x - ConnectLineBox_Width;
 	int ypos1 = y + theight + pos*fheight + (fheight/2);
-	int ypos2 = y + height + (info_height/2);
+	int ypos2 = y + height + OFFSET_INTER + (info_height/2);
 
 	// paint Line if detail info (and not valid list pos)
 	if (pos >= 0) {
@@ -1896,44 +1899,60 @@ void CChannelList::paintItem(int pos, const bool firstpaint)
 		return;
 	}
 	int ypos = y+ theight + pos*fheight;
-	fb_pixel_t color;
-	fb_pixel_t bgcolor;
-	bool iscurrent = true;
+	bool is_available = true;
 	bool paintbuttons = false;
 	unsigned int curr = liststart + pos;
-	fb_pixel_t c_rad_small = 0;
 
-	if(curr < (*chanlist).size()) {
+	if (curr < (*chanlist).size())
+	{
 		if (edit_state)
-			iscurrent = !((*chanlist)[curr]->flags & CZapitChannel::NOT_PRESENT);
+			is_available = !((*chanlist)[curr]->flags & CZapitChannel::NOT_PRESENT);
 		else
-			iscurrent = SameTP((*chanlist)[curr]);
+			is_available = SameTP((*chanlist)[curr]);
 	}
 
-	if(selected >= (*chanlist).size())
+	if (selected >= (*chanlist).size())
 		selected = (*chanlist).size()-1;
 
-	if (curr == selected) {
-		color   = COL_MENUCONTENTSELECTED_TEXT;
-		bgcolor = COL_MENUCONTENTSELECTED_PLUS_0;
+	bool i_selected	= curr == selected;
+	bool i_marked	= getKey(curr) == CNeutrinoApp::getInstance()->channelList->getActiveChannelNumber() && new_zap_mode != 2 /*active*/;
+	int i_radius	= RADIUS_NONE;
+
+	fb_pixel_t color;
+	fb_pixel_t ecolor; // we need one more color for displayNext
+	fb_pixel_t bgcolor;
+
+	getItemColors(color, bgcolor, i_selected, i_marked);
+	ecolor = color;
+
+	if (i_selected || i_marked)
+		i_radius = RADIUS_LARGE;
+
+	if (i_selected)
+	{
 		paintItem2DetailsLine (pos);
 		paintDetails(curr);
 		paintAdditionals(curr);
-		c_rad_small = RADIUS_LARGE;
 		paintbuttons = true;
 	}
-	else if (getKey(curr) == CNeutrinoApp::getInstance()->channelList->getActiveChannelNumber()  && new_zap_mode != 2/*active*/)
+
+	if (displayNext)
 	{
-		color   = !displayNext ? COL_MENUCONTENT_TEXT  : COL_MENUCONTENTINACTIVE_TEXT;
-		bgcolor = !displayNext ? COL_MENUCONTENT_PLUS_1 : COL_MENUCONTENTINACTIVE_PLUS_0;
-		c_rad_small = RADIUS_LARGE;
-	} else {
-		color = iscurrent ? COL_MENUCONTENT_TEXT : COL_MENUCONTENTINACTIVE_TEXT;
-		bgcolor = iscurrent ? COL_MENUCONTENT_PLUS_0 : COL_MENUCONTENTINACTIVE_PLUS_0;
+		/*
+		   I think it's unnecessary to change colors in this case.
+		   The user should know when he has pressed the blue button.
+		*/
+		if (g_settings.theme.colored_events_channellist == 2 /* next */)
+			ecolor = COL_COLORED_EVENTS_TEXT;
+		else
+			ecolor = COL_MENUCONTENTINACTIVE_TEXT;
 	}
 
-	if(!firstpaint || (curr == selected) || getKey(curr) == CNeutrinoApp::getInstance()->channelList->getActiveChannelNumber())
-		  frameBuffer->paintBoxRel(x,ypos, width- 15, fheight, bgcolor, c_rad_small);
+	if (!is_available)
+		color = COL_MENUCONTENTINACTIVE_TEXT;
+
+	if (!firstpaint || i_selected || getKey(curr) == CNeutrinoApp::getInstance()->channelList->getActiveChannelNumber())
+		  frameBuffer->paintBoxRel(x,ypos, width- 15, fheight, bgcolor, i_radius);
 
 	if(curr < (*chanlist).size()) {
 		char nameAndDescription[255];
@@ -1941,8 +1960,6 @@ void CChannelList::paintItem(int pos, const bool firstpaint)
 		CZapitChannel* chan = (*chanlist)[curr];
 		int prg_offset=0;
 		int title_offset=0;
-		fb_pixel_t tcolor=(liststart + pos == selected) ? color : COL_MENUCONTENTINACTIVE_TEXT;
-		int xtheight=fheight-2;
 		int rec_mode;
 		if(g_settings.channellist_progressbar_design != CProgressBar::PB_OFF)
 		{
@@ -1998,7 +2015,7 @@ void CChannelList::paintItem(int pos, const bool firstpaint)
 
 		//paint buttons
 		if (paintbuttons)
-			paintButtonBar(iscurrent);
+			paintButtonBar(is_available);
 
 		int icon_space = r_icon_w+s_icon_w+h_icon_w+8;
 
@@ -2023,32 +2040,22 @@ void CChannelList::paintItem(int pos, const bool firstpaint)
 			l = snprintf(nameAndDescription, sizeof(nameAndDescription), "%s", chan->getName().c_str());
 
 		int pb_space = prg_offset - title_offset;
-		CProgressBar pb(x+5+numwidth + title_offset, ypos + fheight/4 + 2, pb_space + 2, fheight/2 - 4,
-				0, COL_MENUCONTENT_PLUS_0, COL_MENUCONTENTDARK_PLUS_0, COL_INFOBAR_PLUS_7, COL_INFOBAR_PLUS_3);
+		int pb_height = g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_NUMBER]->getDigitHeight();
+		CProgressBar pb(x+5+numwidth + title_offset, ypos + (fheight-pb_height)/2, pb_space + 2, pb_height, COL_MENUCONTENT_PLUS_0);
 		pb.setType(CProgressBar::PB_TIMESCALE);
 		pb.setDesign(g_settings.channellist_progressbar_design);
 		pb.setCornerType(0);
-		pb.setFrameThickness(0);	// no frame
-		pb.doPaintBg(false);		// no background
-		int pb_max = pb_space - 4;
-		if (g_settings.progressbar_design != CProgressBar::PB_MONO) {
-			if (liststart + pos != selected) {
-				fb_pixel_t pbgcol = COL_MENUCONTENT_PLUS_1;
-				if (pbgcol == bgcolor)
-					pbgcol = COL_MENUCONTENT_PLUS_0;
-				pb.setStatusColors(COL_MENUCONTENT_PLUS_3, pbgcol);
-			} else {
-				fb_pixel_t pbgcol = COL_MENUCONTENTSELECTED_PLUS_0;
-				if (pbgcol == bgcolor)
-					pbgcol = COL_MENUCONTENT_PLUS_0;
-				pb.setStatusColors(COL_MENUCONTENTSELECTED_PLUS_2, pbgcol);
-			}
-		} else {
-			if (liststart + pos != selected)
-				pb.setStatusColors(COL_MENUCONTENT_PLUS_3, COL_MENUCONTENT_PLUS_1);
-			else
-				pb.setStatusColors(COL_MENUCONTENTSELECTED_PLUS_2, COL_MENUCONTENTSELECTED_PLUS_0);
+		pb.setStatusColors(COL_MENUCONTENT_PLUS_3, COL_MENUCONTENT_PLUS_1);
+		int pb_frame = 0;
+		if (g_settings.channellist_progressbar_design == CProgressBar::PB_MONO && !g_settings.progressbar_gradient)
+		{
+			// add small frame to mono progressbars w/o gradient for a better visibility
+			pb_frame = 1;
 		}
+		pb.setFrameThickness(pb_frame);
+		pb.doPaintBg(false);
+		int pb_max = pb_space - 4;
+
 		if (!(p_event->description.empty()) && g_settings.j00zek_channellist_name_and_descr) {
 			snprintf(nameAndDescription+l, sizeof(nameAndDescription)-l,g_settings.channellist_epgtext_align_right ? "  ":" - ");
 			unsigned int ch_name_len = g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->getRenderWidth(nameAndDescription);
@@ -2066,10 +2073,10 @@ void CChannelList::paintItem(int pos, const bool firstpaint)
 			if(g_settings.channellist_progressbar_design != CProgressBar::PB_OFF) {
 				if(displayNext)
 				{
-					struct		tm *pStartZeit = localtime(&p_event->startTime);
+					struct tm *pStartZeit = localtime(&p_event->startTime);
 
 					snprintf(tmp, sizeof(tmp), "%02d:%02d", pStartZeit->tm_hour, pStartZeit->tm_min);
-					g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_NUMBER]->RenderString(x+ 5+ numwidth+ 6, ypos+ xtheight, width- numwidth- 20- 15 -prg_offset, tmp, tcolor);
+					g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_NUMBER]->RenderString(x+ 5+ numwidth+ 6, ypos + fheight, width- numwidth- 20- 15 -prg_offset, tmp, ecolor, fheight);
 				}
 				else
 				{
@@ -2089,11 +2096,11 @@ void CChannelList::paintItem(int pos, const bool firstpaint)
 			g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->RenderString(x+ 5+ numwidth+ 10+prg_offset, ypos+ fheight, width- numwidth- 40- 15-prg_offset, nameAndDescription, color);
 			if (g_settings.channellist_epgtext_align_right) {
 				// align right
-				g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->RenderString(x + width - 20 - ch_desc_len - icon_space - 4, ypos + fheight, ch_desc_len, p_event->description, (curr == selected)?COL_MENUCONTENTSELECTED_TEXT:(!displayNext ? COL_MENUCONTENT_TEXT : COL_MENUCONTENTINACTIVE_TEXT));
+				g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->RenderString(x + width - 20 - ch_desc_len - icon_space - 4, ypos + fheight, ch_desc_len, p_event->description, ecolor);
 			}
 			else {
 				// align left
-				g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->RenderString(x+ 5+ numwidth+ 10+ ch_name_len+ 5+prg_offset, ypos+ fheight, ch_desc_len, p_event->description, (curr == selected)?COL_MENUCONTENTSELECTED_TEXT:(!displayNext ? COL_MENUCONTENT_TEXT : COL_MENUCONTENTINACTIVE_TEXT));
+				g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->RenderString(x+ 5+ numwidth+ 10+ ch_name_len+ 5+prg_offset, ypos+ fheight, ch_desc_len, p_event->description, ecolor);
 			}
 		}
 		else {
@@ -2252,14 +2259,14 @@ void CChannelList::paintBody()
 
 	const int ypos = y+ theight;
 	const int sb = height - theight - footerHeight; // paint scrollbar over full height of main box
-	frameBuffer->paintBoxRel(x+ width- 15,ypos, 15, sb,  COL_MENUCONTENT_PLUS_1);
+	frameBuffer->paintBoxRel(x+ width- 15,ypos, 15, sb,  COL_SCROLLBAR_PASSIVE_PLUS_0);
 	unsigned int listmaxshow_tmp = listmaxshow ? listmaxshow : 1;//avoid division by zero
 	int sbc= (((*chanlist).size()- 1)/ listmaxshow_tmp)+ 1;
 	const int sbs= (selected/listmaxshow_tmp);
 	if (sbc < 1)
 		sbc = 1;
 
-	frameBuffer->paintBoxRel(x+ width- 13, ypos+ 2+ sbs*(sb-4)/sbc, 11, (sb-4)/sbc, COL_MENUCONTENT_PLUS_3);
+	frameBuffer->paintBoxRel(x+ width- 13, ypos+ 2+ sbs*(sb-4)/sbc, 11, (sb-4)/sbc, COL_SCROLLBAR_ACTIVE_PLUS_0);
 	showChannelLogo();
 	if ((*chanlist).empty())
 		paintButtonBar(false);

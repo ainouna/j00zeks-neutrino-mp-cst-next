@@ -1,9 +1,46 @@
+/*
+	Based up Neutrino-GUI - Tuxbox-Project
+	Copyright (C) 2001 by Steffen Hehn 'McClean'
+
+	License: GPL
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public
+	License as published by the Free Software Foundation; either
+	version 2 of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+	General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+	***********************************************************
+
+	Module Name: mb_types.h
+
+	Description: Implementation of the CMovieBrowser class
+	             This class provides a filebrowser window to view, select and start a movies from HD.
+	             This class does replace the Filebrowser
+
+	Date:	   Nov 2005
+
+	Author: Guenther@tuxbox.berlios.org
+		based on code of Steffen Hehn 'McClean'
+
+	(C) 2009-2014 Stefan Seyfried
+	(C) 2016      Sven Hoefer
+
+	outsourced:
+	(C) 2016, Thilo Graf 'dbt'
+*/
+
 #include <gui/widget/menue.h>
 
 #ifndef __MB_TYPES__
 #define __MB_TYPES__
-
-
 
 /* !!!! Do NOT change the order of the enum, just add items at the end !!!! */
 typedef enum
@@ -29,9 +66,9 @@ typedef enum
 	MB_INFO_LENGTH 			= 18,
 	MB_INFO_SIZE 			= 19,
 	MB_INFO_RATING			= 20,
-	MB_INFO_MAX_NUMBER		= 21 	// MUST be allways the last item in the list
+	MB_INFO_SPACER			= 21,
+	MB_INFO_MAX_NUMBER		= 22 	// MUST be allways the last item in the list
 }MB_INFO_ITEM;
-
 
 typedef enum
 {
@@ -81,7 +118,6 @@ typedef enum
 	MB_GUI_FILTER = 4,
 	MB_GUI_MAX_NUMBER = 5	// MUST be allways the last item in the list
 }MB_GUI;
-
 
 typedef enum
 {

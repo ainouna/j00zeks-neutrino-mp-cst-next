@@ -69,7 +69,6 @@ typedef enum
 } fp_icon;
 #define CVFD CLCD
 
-#ifdef BOXMODEL_SPARK7162
 typedef enum
 {
 	SPARK_PLAY_FASTBACKWARD = 1,
@@ -105,7 +104,6 @@ typedef enum
 	SPARK_CAB = 45,
 	SPARK_ALL = 46
 } spark_icon;
-#endif
 
 #ifdef LCD_UPDATE
 #ifdef HAVE_CONFIG_H
@@ -217,14 +215,12 @@ class CLCD
 		static void	*TimeThread(void *);
 		pthread_t	thrTime;
 		bool		thread_running;
-#ifdef BOXMODEL_SPARK7162
 		int			last_toggle_state_power;
 		int			brightness;
 		unsigned int	timeout_cnt;
 		unsigned int	switch_name_time_cnt;
 		void		setlcdparameter(int dimm, int power);
 		void		count_down();
-#endif
 #endif
 
 	public:
@@ -288,11 +284,9 @@ class CLCD
 		void Lock();
 		void Unlock();
 		void Clear();
-#ifdef BOXMODEL_SPARK7162
 		void SetIcons(int icon, bool show);
 		void UpdateIcons();
 		void ShowDiskLevel();
-#endif
 		void Reset() {};
 		void ShowIcon(fp_icon icon, bool show);
 		void ShowText(const char *s) { showServicename(std::string(s), true); };

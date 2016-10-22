@@ -394,9 +394,9 @@ int CStringInput::exec( CMenuTarget* parent, const std::string & )
 
 	fb_pixel_t * pixbuf = NULL;
 	if (!parent) {
-		pixbuf = new fb_pixel_t[(width + SHADOW_OFFSET) * (height + SHADOW_OFFSET)];
+		pixbuf = new fb_pixel_t[(width + OFFSET_SHADOW) * (height + OFFSET_SHADOW)];
 		if (pixbuf)
-			frameBuffer->SaveScreen(x, y, width + SHADOW_OFFSET, height + SHADOW_OFFSET, pixbuf);
+			frameBuffer->SaveScreen(x, y, width + OFFSET_SHADOW, height + OFFSET_SHADOW, pixbuf);
 	}
 
 	paint();
@@ -519,7 +519,7 @@ int CStringInput::exec( CMenuTarget* parent, const std::string & )
 
 	if (pixbuf)
 	{
-		frameBuffer->RestoreScreen(x, y, width + SHADOW_OFFSET, height + SHADOW_OFFSET, pixbuf);
+		frameBuffer->RestoreScreen(x, y, width + OFFSET_SHADOW, height + OFFSET_SHADOW, pixbuf);
 		delete[] pixbuf;//Mismatching allocation and deallocation: pixbuf
 		frameBuffer->blit();
 	} else
@@ -541,13 +541,13 @@ int CStringInput::handleOthers(const neutrino_msg_t /*msg*/, const neutrino_msg_
 
 void CStringInput::hide()
 {
-	frameBuffer->paintBackgroundBoxRel(x, y, width + SHADOW_OFFSET, height + SHADOW_OFFSET);
+	frameBuffer->paintBackgroundBoxRel(x, y, width + OFFSET_SHADOW, height + OFFSET_SHADOW);
 	frameBuffer->blit();
 }
 
 void CStringInput::paint(bool sms)
 {
-	frameBuffer->paintBoxRel(x + SHADOW_OFFSET, y + SHADOW_OFFSET, width, height, COL_MENUCONTENTDARK_PLUS_0, RADIUS_LARGE, CORNER_ALL); //round
+	frameBuffer->paintBoxRel(x + OFFSET_SHADOW, y + OFFSET_SHADOW, width, height, COL_SHADOW_PLUS_0, RADIUS_LARGE, CORNER_ALL); //round
 	frameBuffer->paintBoxRel(x, y + hheight, width, bheight, COL_MENUCONTENT_PLUS_0, sms ? 0 : RADIUS_LARGE, CORNER_BOTTOM);
 
 	CComponentsHeader header(x, y, width, hheight, head, iconfile);
@@ -601,19 +601,10 @@ void CStringInput::paintChar(int pos, const char c)
 	fb_pixel_t color;
 	fb_pixel_t bgcolor;
 
-	if (pos == selected)
-	{
-		color   = COL_MENUCONTENTSELECTED_TEXT;
-		bgcolor = COL_MENUCONTENTSELECTED_PLUS_0;
-	}
-	else
-	{
-		color   = COL_MENUCONTENT_TEXT;
-		bgcolor = COL_MENUCONTENT_PLUS_0;
-	}
+	getItemColors(color, bgcolor, pos == selected);
 
-	frameBuffer->paintBoxRel(xpos, ypos, input_w, input_h, COL_MENUCONTENT_PLUS_2);
-	frameBuffer->paintBoxRel(xpos+ 1, ypos+ 1, input_w- 2, input_h- 2, bgcolor);
+	frameBuffer->paintBoxRel(xpos, ypos, input_w, input_h, bgcolor);
+	frameBuffer->paintBoxFrame(xpos, ypos, input_w, input_h, 1, COL_MENUCONTENT_PLUS_2);
 
 	int ch_w = g_Font[SNeutrinoSettings::FONT_TYPE_MENU]->getRenderWidth(ch);
 	int ch_x = xpos + std::max(input_w/2 - ch_w/2, 0);
@@ -901,7 +892,7 @@ const char * CPLPINInput::getHint1(void)
 	}
 }
 
-#define borderwidth SHADOW_OFFSET // FIXME: do we need border around ??
+#define borderwidth OFFSET_SHADOW // FIXME: do we need border around ??
 
 int CPLPINInput::exec( CMenuTarget* parent, const std::string & )
 {

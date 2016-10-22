@@ -121,7 +121,7 @@ const CMenuOptionChooser::keyval LCDMENU_RECICON_OPTIONS[LCDMENU_RECICON_OPTION_
 	{ 1, LOCALE_J00ZEK_VFD_RECICON_ALWAYS   }
 };
 
-#if HAVE_DUCKBOX_HARDWARE || BOXMODEL_SPARK7162
+#if HAVE_DUCKBOX_HARDWARE || HAVE_SPARK_HARDWARE
 #define OPTIONS_OFF_ON_OPTION_COUNT 2
 const CMenuOptionChooser::keyval OPTIONS_OFF_ON_OPTIONS[OPTIONS_OFF_ON_OPTION_COUNT] =
 {
@@ -177,7 +177,7 @@ int CVfdSetup::showSetup()
 		vfds->addItem(oj);
 		vfds->addItem(lcd_clock_channelname_menu);
 
-#if HAVE_DUCKBOX_HARDWARE || BOXMODEL_SPARK7162
+#if HAVE_DUCKBOX_HARDWARE
 		if (g_settings.lcd_vfd_size > 4) {
 			vfds->addItem(new CMenuOptionNumberChooser(LOCALE_LCDMENU_VFD_SCROLL, &g_settings.lcd_vfd_scroll, true, 0, 999, this, 0, 0, NONEXISTANT_LOCALE, true));
 			//display menu items on vfd
@@ -192,6 +192,8 @@ int CVfdSetup::showSetup()
 		CMenuOptionChooser* ri = new CMenuOptionChooser(LOCALE_LCDMENU_RECICON, &g_settings.lcd_vfd_recicon, LCDMENU_RECICON_OPTIONS, LCDMENU_RECICON_OPTION_COUNT, true);
 		ri->setHint("", LOCALE_MENU_HINT_VFD_RECICON);
 		vfds->addItem(ri);
+#elif HAVE_SPARK_HARDWARE
+		vfds->addItem(new CMenuOptionNumberChooser(LOCALE_LCDMENU_VFD_SCROLL, &g_settings.lcd_vfd_scroll, (g_info.hw_caps->display_type == HW_DISPLAY_LINE_TEXT), 0, 999, this, 0, 0, NONEXISTANT_LOCALE, true));
 #else
 		oj = new CMenuOptionChooser(LOCALE_LCDMENU_SCROLL, &g_settings.lcd_scroll, OPTIONS_OFF0_ON1_OPTIONS, OPTIONS_OFF0_ON1_OPTION_COUNT, vfd_enabled);
 		oj->setHint("", LOCALE_MENU_HINT_VFD_SCROLL);

@@ -155,9 +155,9 @@ int j00zekVFDsize=0;
 #include <lib/libdvbsub/dvbsub.h>
 #include <lib/libtuxtxt/teletext.h>
 #include <eitd/sectionsd.h>
-
+#ifdef ENABLE_LUA
 #include <system/luaserver.h>
-
+#endif
 int old_b_id = -1;
 
 CInfoClock      *InfoClock;
@@ -381,7 +381,7 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	g_settings.softupdate_autocheck = configfile.getBool("softupdate_autocheck" , false);
 
 	// video
-#if HAVE_TRIPLEDRAGON || BOXMODEL_SPARK7162
+#if HAVE_TRIPLEDRAGON
 	int vid_Mode_default = VIDEO_STD_PAL;
 #else
 	int vid_Mode_default = VIDEO_STD_720P50;
@@ -524,6 +524,18 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	if (can_deepstandby || cs_get_revision() == 1 || cs_get_revision() > 7)
 		g_settings.shutdown_min = configfile.getInt32("shutdown_min", 0);
 	g_settings.sleeptimer_min = configfile.getInt32("sleeptimer_min", 0);
+
+	g_settings.timer_remotebox_ip.clear();
+	int timer_remotebox_ip_count = configfile.getInt32("timer_remotebox_ip_count", 0);
+	if (timer_remotebox_ip_count) {
+		for (int i = 0; i < timer_remotebox_ip_count; i++) {
+			std::string k = "timer_remotebox_ip_" + to_string(i);
+			std::string timer_remotebox_ip = configfile.getString(k, "");
+			if (timer_remotebox_ip.empty())
+				continue;
+			g_settings.timer_remotebox_ip.push_back(timer_remotebox_ip);
+		}
+	}
 
 	g_settings.infobar_sat_display   = configfile.getBool("infobar_sat_display"  , true );
 	g_settings.infobar_show_channeldesc   = configfile.getBool("infobar_show_channeldesc"  , false );
@@ -922,7 +934,7 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	g_settings.lcd_setting_dim_time = configfile.getString("lcd_dim_time","0");
 	g_settings.lcd_setting_dim_brightness = configfile.getInt32("lcd_dim_brightness", 0);
 	g_settings.lcd_info_line = configfile.getInt32("lcd_info_line", 0);//channel name or clock
-#if HAVE_DUCKBOX_HARDWARE || BOXMODEL_SPARK7162
+#if HAVE_DUCKBOX_HARDWARE || HAVE_SPARK_HARDWARE
 	if ( j00zekVFDsize <= 4) {
 		g_settings.lcd_vfd_scroll = configfile.getInt32("lcd_vfd_scroll", 0);
 		g_settings.lcd_show_menu = configfile.getInt32("lcd_show_menu", 0);
@@ -1221,6 +1233,15 @@ void CNeutrinoApp::saveSetup(const char * fname)
 	configfile.setInt32("shutdown_count"           , g_settings.shutdown_count);
 	configfile.setInt32("shutdown_min"  , g_settings.shutdown_min  );
 	configfile.setInt32("sleeptimer_min", g_settings.sleeptimer_min);
+
+	int timer_remotebox_ip_count = 0;
+	for (std::list<std::string>::iterator it = g_settings.timer_remotebox_ip.begin(); it != g_settings.timer_remotebox_ip.end(); ++it) {
+		std::string k = "timer_remotebox_ip_" + to_string(timer_remotebox_ip_count);
+		configfile.setString(k, *it);
+		timer_remotebox_ip_count++;
+	}
+	configfile.setInt32 ( "timer_remotebox_ip_count", g_settings.timer_remotebox_ip.size());
+
 	configfile.setBool("infobar_sat_display"  , g_settings.infobar_sat_display  );
 	configfile.setBool("infobar_show_channeldesc"  , g_settings.infobar_show_channeldesc  );
 	configfile.setInt32("infobar_subchan_disp_pos"  , g_settings.infobar_subchan_disp_pos  );
@@ -1516,7 +1537,7 @@ void CNeutrinoApp::saveSetup(const char * fname)
 	configfile.setString("lcd_dim_time", g_settings.lcd_setting_dim_time);
 	configfile.setInt32("lcd_dim_brightness", g_settings.lcd_setting_dim_brightness);
 	configfile.setInt32("lcd_info_line", g_settings.lcd_info_line);//channel name or clock
-#if HAVE_DUCKBOX_HARDWARE || BOXMODEL_SPARK7162
+#if HAVE_DUCKBOX_HARDWARE || HAVE_SPARK_HARDWARE
 	configfile.setInt32("lcd_vfd_scroll", g_settings.lcd_vfd_scroll);
 	configfile.setInt32("lcd_vfd_recicon", g_settings.lcd_vfd_recicon);
 	configfile.setInt32("lcd_vfd_size", j00zekVFDsize);
@@ -2539,7 +2560,7 @@ void CNeutrinoApp::showInfo()
 	StartSubtitles();
 }
 
-#if HAVE_DUCKBOX_HARDWARE || BOXMODEL_SPARK7162
+#if HAVE_DUCKBOX_HARDWARE || HAVE_SPARK_HARDWARE
 static void check_timer()
 {
 	CTimerd::TimerList tmpTimerList;
@@ -2564,7 +2585,7 @@ void CNeutrinoApp::showMainMenu()
 	int old_mode = g_settings.epg_scan_mode;
 	int old_save_mode = g_settings.epg_save_mode;
 	mainMenu->exec(NULL, "");
-#if HAVE_DUCKBOX_HARDWARE || BOXMODEL_SPARK7162
+#if HAVE_DUCKBOX_HARDWARE || HAVE_SPARK_HARDWARE
 	CVFD::getInstance()->UpdateIcons();
 #endif
 	InfoClock->enableInfoClock(true);
@@ -2619,9 +2640,9 @@ void CNeutrinoApp::RealRun()
 		standbyMode(true, true);
 
 	//cCA::GetInstance()->Ready(true);
-
+#ifdef ENABLE_LUA
 	CLuaServer *luaServer = CLuaServer::getInstance();
-
+#endif
 	g_PluginList->startPlugin("startup");
 	if (!g_PluginList->getScriptOutput().empty()) {
 		ShowMsg(LOCALE_PLUGINS_RESULT, g_PluginList->getScriptOutput(), CMessageBox::mbrBack,CMessageBox::mbBack,NEUTRINO_ICON_SHELL);
@@ -2632,12 +2653,16 @@ void CNeutrinoApp::RealRun()
 	m_screensaver	= false;
 
 	while( true ) {
+#ifdef ENABLE_LUA
 		luaServer->UnBlock();
+#endif
 		g_RCInput->getMsg(&msg, &data, 100, ((g_settings.mode_left_right_key_tv == SNeutrinoSettings::VOLUME) && (g_RemoteControl->subChannels.size() < 1)) ? true : false);	// 10 secs..
+#ifdef ENABLE_LUA
 		if (luaServer->Block(msg, data))
 			continue;
+#endif
 
-#if HAVE_DUCKBOX_HARDWARE || BOXMODEL_SPARK7162
+#if HAVE_DUCKBOX_HARDWARE || HAVE_SPARK_HARDWARE
 		check_timer();
 #endif
 		if (mode == mode_radio) {
@@ -2921,7 +2946,7 @@ void CNeutrinoApp::RealRun()
 					CMediaPlayerMenu::getInstance()->exec(NULL, "inetplayer");
 					break;
 				}
-#if HAVE_DUCKBOX_HARDWARE || BOXMODEL_SPARK7162
+#if HAVE_DUCKBOX_HARDWARE || HAVE_SPARK_HARDWARE
 				CVFD::getInstance()->UpdateIcons();
 #endif
 			}
@@ -3202,7 +3227,7 @@ int CNeutrinoApp::handleMsg(const neutrino_msg_t _msg, neutrino_msg_data_t data)
 #if HAVE_SPARK_HARDWARE || HAVE_DUCKBOX_HARDWARE
 		C3DSetup::getInstance()->exec(NULL, "zapped");
 #endif
-#if HAVE_DUCKBOX_HARDWARE || BOXMODEL_SPARK7162
+#if HAVE_DUCKBOX_HARDWARE || HAVE_SPARK_HARDWARE
 		CVFD::getInstance()->UpdateIcons();
 #endif
 #ifdef ENABLE_GRAPHLCD

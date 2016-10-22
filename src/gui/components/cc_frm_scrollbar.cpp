@@ -63,7 +63,9 @@ CComponentsScrollBar::CComponentsScrollBar(	const int &x_pos, const int &y_pos, 
 						const int& count,
 						CComponentsForm* parent,
 						int shadow_mode,
-						fb_pixel_t color_frame, fb_pixel_t color_body, fb_pixel_t color_shadow)
+						fb_pixel_t color_frame,
+						fb_pixel_t color_body,
+						fb_pixel_t color_shadow)
 						:CComponentsFrmChain(x_pos, y_pos, w, h, NULL, CC_DIR_Y, parent, shadow_mode, color_frame, color_body, color_shadow)
 {
 	initVarSbForm(count);
@@ -109,6 +111,7 @@ void CComponentsScrollBar::initTopNaviIcon()
 	//initialize icon object
 	if (sb_up_obj == NULL){
 		sb_up_obj = new CComponentsPicture(CC_CENTERED, fr_thickness, sb_up_icon, this);
+		sb_up_obj->SetTransparent(CFrameBuffer::TM_BLACK);
 		sb_up_obj->doPaintBg(false);
 	}
 	sb_up_obj->setWidth(width-2*fr_thickness);
@@ -119,6 +122,7 @@ void CComponentsScrollBar::initBottomNaviIcon()
 	//initialize icon object
 	if (sb_down_obj == NULL){
 		sb_down_obj = new CComponentsPicture(CC_CENTERED, CC_APPEND, sb_down_icon, this);
+		sb_down_obj->SetTransparent(CFrameBuffer::TM_BLACK);
 		sb_down_obj->doPaintBg(false);
 	}
 	sb_down_obj->setWidth(width-2*fr_thickness);
@@ -163,13 +167,17 @@ void CComponentsScrollBar::initSegments()
 
 		//set color for marked id
 		if (sb_mark_id == id){
-			item->setColorBody(COL_MENUCONTENTSELECTED_PLUS_0);
+			item->setColorBody(COL_SCROLLBAR_ACTIVE);
+#if 0
 			item->enableColBodyGradient(CC_COLGRAD_COL_A_2_COL_B);
 			item->setColBodyGradient(CColorGradient::gradientDark2Light2Dark, CFrameBuffer::gradientHorizontal);
+#endif
 		}
 		else{
-			item->setColorBody(COL_MENUCONTENT_PLUS_1);
+			item->setColorBody(COL_SCROLLBAR_PASSIVE);
+#if 0
 			item->disableColBodyGradient();
+#endif
 		}
 	}
 

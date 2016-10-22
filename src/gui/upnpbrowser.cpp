@@ -4,6 +4,7 @@
   UPnP Browser (c) 2007 by Jochen Friedrich
                (c) 2009-2011,2016 Stefan Seyfried
                (c) 2016 Thilo Graf
+               (c) 2016 Sven Hoefer
 
   License: GPL
 
@@ -46,9 +47,10 @@
 #include <gui/components/cc.h>
 #include <gui/widget/messagebox.h>
 #include <gui/widget/hintbox.h>
-#include <system/settings.h>
 #include <gui/infoclock.h>
 #include <gui/upnpbrowser.h>
+#include <system/settings.h>
+#include <system/helpers.h>
 #include <zapit/zapit.h>
 #include <video.h>
 
@@ -81,15 +83,13 @@ CUpnpBrowserGui::CUpnpBrowserGui()
 	CFrameBuffer::getInstance()->OnAfterSetPallette.connect(reinit);
 }
 
-#define INNER_OFFSET SHADOW_OFFSET
-
 void CUpnpBrowserGui::Init()
 {
 	font_item = SNeutrinoSettings::FONT_TYPE_MENU;
 
 	topbox.enableFrame(true, 2);
 	topbox.setCorner(RADIUS_LARGE);
-	topbox.setColorAll(COL_MENUCONTENT_PLUS_6, COL_MENUHEAD_PLUS_0, COL_SHADOW_PLUS_0, COL_MENUHEAD_TEXT);
+	topbox.setColorAll(COL_FRAME_PLUS_0, COL_MENUHEAD_PLUS_0, COL_SHADOW_PLUS_0, COL_MENUHEAD_TEXT);
 	topbox.setTextFont(g_Font[SNeutrinoSettings::FONT_TYPE_MENU_INFO]);
 	topbox.enableColBodyGradient(g_settings.theme.menu_Head_gradient, COL_SHADOW_PLUS_0, g_settings.theme.menu_Head_gradient_direction);
 	topbox.enableShadow(CC_SHADOW_ON, -1, true);
@@ -97,6 +97,7 @@ void CUpnpBrowserGui::Init()
 	infobox.enableFrame(true, 2);
 	infobox.setCorner(RADIUS_LARGE);
 	infobox.setColorAll(topbox.getColorFrame(), COL_MENUCONTENTDARK_PLUS_0);
+	infobox.setTextColor(COL_MENUCONTENTDARK_TEXT);
 	infobox.setTextFont(g_Font[SNeutrinoSettings::FONT_TYPE_MENU]);
 	infobox.enableColBodyGradient(g_settings.theme.menu_Hint_gradient, COL_SHADOW_PLUS_0, g_settings.theme.menu_Hint_gradient_direction);
 	infobox.enableShadow(CC_SHADOW_ON, -1, true);
@@ -104,6 +105,7 @@ void CUpnpBrowserGui::Init()
 	timebox.enableFrame(true, 2);
 	timebox.setCorner(RADIUS_LARGE);
 	timebox.setColorAll(infobox.getColorFrame(), infobox.getColorBody());
+	timebox.setTextColor(infobox.getTextColor());
 	timebox.setTextFont(g_Font[SNeutrinoSettings::FONT_TYPE_MENU]);
 	timebox.enableColBodyGradient(g_settings.theme.menu_Hint_gradient, COL_SHADOW_PLUS_0, g_settings.theme.menu_Hint_gradient_direction);
 	timebox.enableShadow(CC_SHADOW_ON, -1, true);
@@ -119,25 +121,25 @@ void CUpnpBrowserGui::Init()
 
 	m_header_height = _title_height;
 	m_footer_height = _title_height;
-	m_topbox_height = _top_height*3 + 10; // topbox: 3 lines + inner offset + shadow
-	m_infobox_height = _info_height*2 + 20; // infobox/timebox: 2 lines + inner offset + shadow
+	m_topbox_height = _top_height*3 + OFFSET_INNER_MID; // topbox: 3 lines + inner offset
+	m_infobox_height = _info_height*2 + OFFSET_INNER_LARGE; // infobox/timebox: 2 lines + inner offset
 
 	/* From top to bottom we have:
 	 *
 	 * topbox (with shadow)
-	 * INNER_OFFSET
+	 * OFFSET_INTER
 	 * mainwindow (with shadow)
 	 *  - header
 	 *  - body (items*listshowmax)
 	 *  - footer
-	 * INNER_OFFSET
+	 * OFFSET_INTER
 	 * infobox/timebox (with shadow)
 	*/
 
-	m_listmaxshow = (m_height - m_topbox_height - SHADOW_OFFSET - INNER_OFFSET - m_header_height - m_footer_height - SHADOW_OFFSET - INNER_OFFSET - m_infobox_height - SHADOW_OFFSET) / (m_item_height);
+	m_listmaxshow = (m_height - m_topbox_height - OFFSET_SHADOW - OFFSET_INTER - m_header_height - m_footer_height - OFFSET_SHADOW - OFFSET_INTER - m_infobox_height - OFFSET_SHADOW) / (m_item_height);
 
 	// recalc height
-	m_height = m_topbox_height + SHADOW_OFFSET + INNER_OFFSET + m_header_height + (m_listmaxshow * m_item_height) + m_footer_height + SHADOW_OFFSET + INNER_OFFSET + m_infobox_height + SHADOW_OFFSET;
+	m_height = m_topbox_height + OFFSET_SHADOW + OFFSET_INTER + m_header_height + (m_listmaxshow * m_item_height) + m_footer_height + OFFSET_SHADOW + OFFSET_INTER + m_infobox_height + OFFSET_SHADOW;
 
 	footer.setHeight(m_footer_height);
 	footer.enableShadow(CC_SHADOW_ON, -1, true);
@@ -148,10 +150,10 @@ void CUpnpBrowserGui::Init()
 	m_y=getScreenStartY(m_height);
 
 	// calc positions
-	m_header_y = m_y + m_topbox_height + SHADOW_OFFSET + INNER_OFFSET;
+	m_header_y = m_y + m_topbox_height + OFFSET_SHADOW + OFFSET_INTER;
 	m_item_y = m_header_y + m_header_height;
 	m_footer_y = m_item_y + (m_listmaxshow * m_item_height);
-	m_infobox_y = m_footer_y + m_footer_height + SHADOW_OFFSET + INNER_OFFSET;
+	m_infobox_y = m_footer_y + m_footer_height + OFFSET_SHADOW + OFFSET_INTER;
 }
 
 CUpnpBrowserGui::~CUpnpBrowserGui()
@@ -190,8 +192,7 @@ int CUpnpBrowserGui::exec(CMenuTarget* parent, const std::string & /*actionKey*/
 
 	selectDevice();
 
-	if (CAudioPlayer::getInstance()->getState() != CBaseDec::STOP)
-		CAudioPlayer::getInstance()->stop();
+	stopAudio();
 
 	// Start Sectionsd
 	g_Sectionsd->setPauseScanning(false);
@@ -861,9 +862,8 @@ bool CUpnpBrowserGui::selectItem(std::string id)
 			m_playid++;
 		}
 		else if (msg == CRCInput::RC_yellow) {
-			if (CAudioPlayer::getInstance()->getState() != CBaseDec::STOP)
-				CAudioPlayer::getInstance()->stop();
 			m_folderplay = false;
+			stopAudio();
 		}
 		else if (m_folderplay && msg == (neutrino_msg_t) CRCInput::RC_stop) {
 			timeout = 0;
@@ -879,8 +879,7 @@ bool CUpnpBrowserGui::selectItem(std::string id)
 		}
 		else if (m_folderplay && msg == (neutrino_msg_t) CRCInput::RC_next) {
 			timeout = 0;
-			if (CAudioPlayer::getInstance()->getState() != CBaseDec::STOP)
-				CAudioPlayer::getInstance()->stop();
+			stopAudio();
 		}
 		else if (msg == NeutrinoMessages::RECORD_START ||
 				msg == NeutrinoMessages::ZAPTO ||
@@ -911,6 +910,17 @@ bool CUpnpBrowserGui::selectItem(std::string id)
 			m_playid++;
 		}
 	}
+
+#if 0
+	/*
+	   maybe it's better to stop audio here,
+	   because infobox and timebox will never been painted and updated
+	*/
+	if (endall)
+	{
+		stopAudio();
+	}
+#endif
 
 	delete entries;
 	timeout = 0;
@@ -947,37 +957,35 @@ void CUpnpBrowserGui::paintDeviceInfo()
 void CUpnpBrowserGui::paintDevice(unsigned int _pos)
 {
 	int ypos = m_item_y + _pos*m_item_height;
+	unsigned int pos = m_deviceliststart + _pos;
+
+	bool i_selected	= pos == m_selecteddevice;
+	int i_radius	= RADIUS_NONE;
+
 	fb_pixel_t color;
 	fb_pixel_t bgcolor;
 
-	unsigned int pos = m_deviceliststart + _pos;
-	if (pos == m_selecteddevice)
+	getItemColors(color, bgcolor, i_selected);
+
+	if (i_selected)
 	{
-		color   = COL_MENUCONTENT_TEXT_PLUS_2;
-		bgcolor = COL_MENUCONTENT_PLUS_2;
 		paintDeviceInfo();
+		i_radius = RADIUS_LARGE;
 	}
-	else
-	{
-		color   = COL_MENUCONTENT_TEXT;
-		bgcolor = COL_MENUCONTENT_PLUS_0;
-	}
-	m_frameBuffer->paintBoxRel(m_x, ypos, m_width - 15, m_item_height, bgcolor);
+
+	if (i_radius)
+		m_frameBuffer->paintBoxRel(m_x, ypos, m_width - 15, m_item_height, COL_MENUCONTENT_PLUS_0);
+	m_frameBuffer->paintBoxRel(m_x, ypos, m_width - 15, m_item_height, bgcolor, i_radius);
 
 	if (pos >= m_devices.size())
 		return;
 
-	char sNr[20];
-	sprintf(sNr, "%2d", pos + 1);
-	std::string num = sNr;
-
+	std::string num = to_string(pos + 1);
 	std::string name = m_devices[pos].friendlyname;
 
-	int w = g_Font[font_item]->getRenderWidth(name) + 5;
-	g_Font[font_item]->RenderString(m_x + 10, ypos + m_item_height, m_width - 30 - w,
-			num, color, m_item_height);
-	g_Font[font_item]->RenderString(m_x + m_width - 15 - w, ypos + m_item_height,
-			w, name, color, m_item_height);
+	int w = g_Font[font_item]->getRenderWidth(name);
+	g_Font[font_item]->RenderString(m_x + OFFSET_INNER_MID, ypos + m_item_height, m_width - 15 - OFFSET_INNER_MID - w, num, color, m_item_height);
+	g_Font[font_item]->RenderString(m_x + m_width - 15 - OFFSET_INNER_MID - w, ypos + m_item_height, w, name, color, m_item_height);
 }
 
 void CUpnpBrowserGui::paintDevices()
@@ -1000,55 +1008,56 @@ void CUpnpBrowserGui::paintDevices()
 		paintDevice(count);
 
 	int sb = m_item_height * m_listmaxshow;
-	m_frameBuffer->paintBoxRel(m_x + m_width - 15, m_item_y, 15, sb, COL_MENUCONTENT_PLUS_1);
+	m_frameBuffer->paintBoxRel(m_x + m_width - 15, m_item_y, 15, sb, COL_SCROLLBAR_PASSIVE_PLUS_0);
 	unsigned int tmp_max = m_listmaxshow;
 	if(!tmp_max)
 		tmp_max = 1;
 	int sbc = ((m_devices.size() - 1) / tmp_max) + 1;
 	int sbs = ((m_selecteddevice) / tmp_max);
 
-	m_frameBuffer->paintBoxRel(m_x + m_width - 13, m_item_y + 2 + sbs*(sb-4)/sbc, 11, (sb-4)/sbc, COL_MENUCONTENT_PLUS_3);
+	m_frameBuffer->paintBoxRel(m_x + m_width - 13, m_item_y + 2 + sbs*(sb-4)/sbc, 11, (sb-4)/sbc, COL_SCROLLBAR_ACTIVE_PLUS_0);
 
 	//shadow
-	m_frameBuffer->paintBoxRel(m_x + m_width, m_item_y + SHADOW_OFFSET, SHADOW_OFFSET, sb, COL_SHADOW_PLUS_0);
+	m_frameBuffer->paintBoxRel(m_x + m_width, m_item_y + OFFSET_SHADOW, OFFSET_SHADOW, sb, COL_SHADOW_PLUS_0);
 
 	// Foot
 	footer.paintButtons(m_x, m_footer_y, m_width, m_footer_height, 1, &RescanButton, m_width/2);
 
-	paintItem2DetailsLine (-1); // clear it
+	paintItem2DetailsLine(-1); // clear it
 }
 
 void CUpnpBrowserGui::paintItem(std::vector<UPnPEntry> *entries, unsigned int pos, unsigned int selected)
 {
 	int ypos = m_item_y + pos*m_item_height;
+
+	bool i_selected	= pos == selected;
+	int i_radius	= RADIUS_NONE;
+
 	fb_pixel_t color;
 	fb_pixel_t bgcolor;
 
-	if (pos == selected)
-	{
-		color   = COL_MENUCONTENT_TEXT_PLUS_2;
-		bgcolor = COL_MENUCONTENT_PLUS_2;
-	}
-	else
-	{
-		color   = COL_MENUCONTENT_TEXT;
-		bgcolor = COL_MENUCONTENT_PLUS_0;
-	}
-	m_frameBuffer->paintBoxRel(m_x, ypos, m_width - 15, m_item_height, bgcolor);
+	getItemColors(color, bgcolor, i_selected);
+
+	if (i_selected)
+		i_radius = RADIUS_LARGE;
+
+	if (i_radius)
+		m_frameBuffer->paintBoxRel(m_x, ypos, m_width - 15, m_item_height, COL_MENUCONTENT_PLUS_0);
+	m_frameBuffer->paintBoxRel(m_x, ypos, m_width - 15, m_item_height, bgcolor, i_radius);
 
 	if (pos >= (*entries).size())
 		return;
 
 	UPnPEntry *entry = &(*entries)[pos];
 
-	if (pos == selected)
+	if (i_selected)
 	{
 		paintItemInfo(entry);
 		paintDetails(entry);
 		if (entry->isdir)
-			paintItem2DetailsLine (-1); // clear it
+			paintItem2DetailsLine(-1); // clear it
 		else
-			paintItem2DetailsLine (pos);
+			paintItem2DetailsLine(pos);
 	}
 
 	int preferred=entry->preferred;
@@ -1074,7 +1083,7 @@ void CUpnpBrowserGui::paintItem(std::vector<UPnPEntry> *entries, unsigned int po
 	}
 
 	std::string name = entry->title;
-	char tmp_time[] = "00:00:00.0";
+	char tmp_time[] = "0:00:00.00";
 	int w = g_Font[font_item]->getRenderWidth(tmp_time);
 
 	int icon_w = 0;
@@ -1083,11 +1092,11 @@ void CUpnpBrowserGui::paintItem(std::vector<UPnPEntry> *entries, unsigned int po
 	m_frameBuffer->getIconSize(fileicon.c_str(), &icon_w, &icon_h);
 	if (icon_w && icon_h)
 	{
-		icon_o = icon_w + 10;
-		m_frameBuffer->paintIcon(fileicon, m_x + 10, ypos + (m_item_height - icon_h) / 2);
+		icon_o = icon_w + OFFSET_INNER_MID;
+		m_frameBuffer->paintIcon(fileicon, m_x + OFFSET_INNER_MID, ypos + (m_item_height - icon_h)/2);
 	}
-	g_Font[font_item]->RenderString(m_x + m_width - 15 - 10 - w, ypos + m_item_height, w, info, color, m_item_height);
-	g_Font[font_item]->RenderString(m_x + 10 + icon_o, ypos + m_item_height, m_width - icon_o - 15 - 2*10 - w, name, color, m_item_height);
+	g_Font[font_item]->RenderString(m_x + OFFSET_INNER_MID + icon_o, ypos + m_item_height, m_width - 15 - OFFSET_INNER_MID - w, name, color, m_item_height);
+	g_Font[font_item]->RenderString(m_x + m_width - 15 - OFFSET_INNER_MID - w, ypos + m_item_height, w, info, color, m_item_height);
 }
 
 void CUpnpBrowserGui::paintItemInfo(UPnPEntry *entry)
@@ -1130,16 +1139,16 @@ void CUpnpBrowserGui::paintItemInfo(UPnPEntry *entry)
 		if(lastname != entry->albumArtURI){
 			tmpname = lastname = entry->albumArtURI.c_str();
 			tmpname = g_PicViewer->DownloadImage(tmpname);
-			int h_image = infobox.getHeight() - INNER_OFFSET - infobox.getCornerRadius();
+			int h_image = infobox.getHeight() - OFFSET_INTER - infobox.getCornerRadius();
 			int y_image = infobox.getYPos() + infobox.getHeight()/2 - h_image/2;
 			if (!image){
-				image = new CComponentsPicture(100, y_image, tmpname, NULL, CC_SHADOW_OFF, COL_MENUCONTENTDARK_PLUS_0);
+				image = new CComponentsPicture(0, y_image, tmpname, NULL, CC_SHADOW_OFF, COL_MENUCONTENTDARK_PLUS_0);
 				image->doPaintBg(false);
 				image->SetTransparent(CFrameBuffer::TM_BLACK);
 			}
 			image->setPicture(tmpname);
 			image->setHeight(h_image, true);
-			int x_image = infobox.getXPos() + infobox.getWidth() - image->getWidth() - INNER_OFFSET - infobox.getCornerRadius();
+			int x_image = infobox.getXPos() + infobox.getWidth() - image->getWidth() - OFFSET_INTER - infobox.getCornerRadius();
 			image->setXPos(x_image);
 		}
 	}else{
@@ -1169,7 +1178,6 @@ void CUpnpBrowserGui::paintItems(std::vector<UPnPEntry> *entry, unsigned int sel
 	CComponentsHeader header(m_x, m_header_y, m_width, m_header_height, name, NEUTRINO_ICON_UPNP);
 	if (CNeutrinoApp::getInstance()->isMuted())
 		header.setContextButton(NEUTRINO_ICON_BUTTON_MUTE_SMALL);
-	//header.enableShadow();
 	header.paint(CC_SAVE_SCREEN_NO);
 
 	// Items
@@ -1177,7 +1185,7 @@ void CUpnpBrowserGui::paintItems(std::vector<UPnPEntry> *entry, unsigned int sel
 		paintItem(entry, count, selected);
 
 	int sb = m_item_height * m_listmaxshow;
-	m_frameBuffer->paintBoxRel(m_x + m_width - 15, m_item_y, 15, sb, COL_MENUCONTENT_PLUS_1);
+	m_frameBuffer->paintBoxRel(m_x + m_width - 15, m_item_y, 15, sb, COL_SCROLLBAR_PASSIVE_PLUS_0);
 	unsigned int tmp = m_listmaxshow ? m_listmaxshow : 1;//avoid division by zero
 	int sbc = ((max + offset - 1) / tmp) + 1;
 	int sbs = ((selected + offset) / tmp);
@@ -1185,27 +1193,25 @@ void CUpnpBrowserGui::paintItems(std::vector<UPnPEntry> *entry, unsigned int sel
 	int sbh = 0;
 	if ((sbc > 0) && (sbc > sb-4))
 		sbh = 2;
-	m_frameBuffer->paintBoxRel(m_x + m_width - 13, m_item_y + 2 + sbs*((sb-4)/sbc+sbh), 11, (sb-4)/sbc + sbh, COL_MENUCONTENT_PLUS_3);
-
-	//shadow
-	//m_frameBuffer->paintBoxRel(m_x + m_width, m_item_y + SHADOW_OFFSET, SHADOW_OFFSET, sb, COL_SHADOW_PLUS_0);
+	m_frameBuffer->paintBoxRel(m_x + m_width - 13, m_item_y + 2 + sbs*((sb-4)/sbc+sbh), 11, (sb-4)/sbc + sbh, COL_SCROLLBAR_ACTIVE_PLUS_0);
 
 	// Foot buttons
 	size_t numbuttons = sizeof(BrowseButtons)/sizeof(BrowseButtons[0]);
-
 	footer.paintButtons(m_x, m_footer_y, m_width, m_footer_height, numbuttons, BrowseButtons, m_width/numbuttons);
 }
 
 void CUpnpBrowserGui::paintDetails(UPnPEntry *entry, bool use_playing)
 {
 	// Foot info
-	int timebox_width = m_infobox_height; // maybe not enough
-	infobox.setDimensionsAll(m_x, m_infobox_y, m_width - SHADOW_OFFSET - INNER_OFFSET - timebox_width, m_infobox_height);
-	timebox.setDimensionsAll(m_x + m_width - timebox_width, infobox.getYPos(), m_infobox_height, timebox_width);
+	char tmp_time[] = "000:00";
+	int timebox_width = timebox.getFont()->getRenderWidth(tmp_time) + OFFSET_INNER_MID*2;
+	infobox.setDimensionsAll(m_x, m_infobox_y, m_width - OFFSET_SHADOW - OFFSET_INTER - timebox_width, m_infobox_height);
+	timebox.setDimensionsAll(m_x + m_width - timebox_width, infobox.getYPos(), timebox_width, m_infobox_height);
 
 	printf("paintDetails: use_playing %d shown %d\n", use_playing, m_playing_entry_is_shown);
 	if ((!use_playing) && entry->isdir){
 		infobox.kill();
+		timebox.kill();
 		m_playing_entry_is_shown = false;
 	}else{
 		string text = "";
@@ -1234,7 +1240,7 @@ void CUpnpBrowserGui::paintDetails(UPnPEntry *entry, bool use_playing)
 	}
 }
 
-void CUpnpBrowserGui::paintItem2DetailsLine (int pos)
+void CUpnpBrowserGui::paintItem2DetailsLine(int pos)
 {
 	if (pos < 0)
 		return;
@@ -1247,7 +1253,7 @@ void CUpnpBrowserGui::paintItem2DetailsLine (int pos)
 
 	if (!dline)
 		dline = new CComponentsDetailLine();
-	dline->setDimensionsAll(xpos, ypos1a, ypos2, m_item_height/2, infobox.getHeight()-RADIUS_LARGE*2);
+	dline->setDimensionsAll(xpos, ypos1a, ypos2, m_item_height/2, infobox.getHeight() - RADIUS_LARGE*2);
 	dline->paint();
 }
 
@@ -1282,6 +1288,14 @@ void CUpnpBrowserGui::playAudio(std::string name, int type)
 	CNeutrinoApp::getInstance()->handleMsg(NeutrinoMessages::CHANGEMODE, NeutrinoMessages::mode_upnp | NeutrinoMessages::norezap);
 }
 
+void CUpnpBrowserGui::stopAudio()
+{
+	if (CAudioPlayer::getInstance()->getState() != CBaseDec::STOP)
+	{
+		CAudioPlayer::getInstance()->stop();
+	}
+}
+
 void CUpnpBrowserGui::showPicture(std::string name)
 {
 	CNeutrinoApp::getInstance()->handleMsg(NeutrinoMessages::CHANGEMODE, NeutrinoMessages::mode_pic);
@@ -1305,8 +1319,7 @@ void CUpnpBrowserGui::playVideo(std::string name, std::string url)
 {
 	CNeutrinoApp::getInstance()->handleMsg(NeutrinoMessages::CHANGEMODE, NeutrinoMessages::mode_ts);
 
-	if (CAudioPlayer::getInstance()->getState() != CBaseDec::STOP)
-		CAudioPlayer::getInstance()->stop();
+	stopAudio();
 
 	m_frameBuffer->stopFrame();
 	CMoviePlayerGui::getInstance().SetFile(name, url);
