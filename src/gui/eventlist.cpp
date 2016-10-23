@@ -794,7 +794,7 @@ void CEventList::paintItem(unsigned int pos, t_channel_id channel_idI)
 		//printf ("etype %d , conflicts %d -> %s, conflict event_ID %d -> current event_ID %d\n", etype, conflict, evtlist[currpos].description.c_str(), item_event_ID, evtlist[currpos].eventID);
 		
 		//TODO: solution for zapto timer events
-		if (conflict && item_event_ID != evtlist[curpos].eventID && !CRecordManager::getInstance()->TimeshiftOnly())
+		if (conflict && item_event_ID != evtlist[currpos].eventID && !CRecordManager::getInstance()->TimeshiftOnly())
 		{
 			//paint_warning = true;
 			frameBuffer->getIconSize(NEUTRINO_ICON_IMPORTANT, &i2w, &i2h);
