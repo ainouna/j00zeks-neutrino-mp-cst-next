@@ -11,6 +11,7 @@
 #include <grp.h>
 #include <syscall.h>
 #include <stdio.h>
+#include <stdlib.h>     /* getenv */
 
 #include <system/set_threadname.h>
 #include <system/helpers.h>
@@ -125,8 +126,12 @@ void * nhttpd_main_thread(void *) {
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 	aprintf("Webserver %s tid %ld\n", WEBSERVERNAME, syscall(__NR_gettid));
 	yhttpd = new Cyhttpd();
-	//CLogging::getInstance()->setDebug(true);
-	//CLogging::getInstance()->LogLevel = 9;
+	// enable debug if enabled in environment
+	if (getenv("yhttpdDbg") != NULL) {
+		CLogging::getInstance()->setDebug(true);
+		CLogging::getInstance()->LogLevel = 9;
+	}
+	// <<< debug
 	if (!yhttpd) {
 		aprintf("Error initializing WebServer\n");
 		return (void *) EXIT_FAILURE;
