@@ -59,7 +59,9 @@ extern cVideo * videoDecoder;
 extern CPlugins *g_PluginList;//for relodplugins
 extern CBouquetManager *g_bouquetManager;
 #if HAVE_DUCKBOX_HARDWARE
-#define EVENTDEV "/dev/input/event0"
+/* j00zek:we map nevis_ir in startup scripts
+#define EVENTDEV "/dev/input/event0" */
+#define EVENTDEV "/dev/input/nevis_ir"
 #elif HAVE_SPARK_HARDWARE
 #define EVENTDEV "/dev/input/nevis_ir"
 #else
