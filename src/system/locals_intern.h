@@ -2681,5 +2681,6 @@ const char * locale_real_names[] =
 	"j00zek.colorthememenu_skins",
 	"j00zek.colorthememenu_userskins",
 	"j00zek.lcdmenu_showmenu",
+	"j00zek.channellist_png_selector",
 };
 #endif

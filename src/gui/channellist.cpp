@@ -80,6 +80,11 @@
 
 #include <eitd/sectionsd.h>
 
+//>>> to display nice selector
+extern CPictureViewer * g_PicViewer;
+#define SELECTOR_PNG "/usr/share/tuxbox/neutrino/skins/channelListSelector.png"
+//<<<
+
 extern CBouquetList * bouquetList;       /* neutrino.cpp */
 extern CRemoteControl * g_RemoteControl; /* neutrino.cpp */
 extern CBouquetList   * AllFavBouquetList;
@@ -1951,8 +1956,16 @@ void CChannelList::paintItem(int pos, const bool firstpaint)
 	if (!is_available)
 		color = COL_MENUCONTENTINACTIVE_TEXT;
 
-	if (!firstpaint || i_selected || getKey(curr) == CNeutrinoApp::getInstance()->channelList->getActiveChannelNumber())
+	/* paint selector backgound */
+	if (i_selected && g_settings.j00zek_channellist_png_selector) { 
+		if (!g_PicViewer->DisplayImage(SELECTOR_PNG, x+2, ypos, (width-15-4), fheight, 1 /*transparency flag*/)) {
+			frameBuffer->paintBoxRel(x,ypos, width- 15, fheight, bgcolor, i_radius);
+		}
+	} else if (!firstpaint || i_selected || getKey(curr) == CNeutrinoApp::getInstance()->channelList->getActiveChannelNumber()) {
 		  frameBuffer->paintBoxRel(x,ypos, width- 15, fheight, bgcolor, i_radius);
+		  /*printf("j00zek: curr=%d, firstpaint=%d, i_selected=%d, getKey(curr)=%d, ActiveChannelNumber()=%d, bgcolor=%d\n",
+				  curr,    firstpaint,    i_selected,    getKey(curr), CNeutrinoApp::getInstance()->channelList->getActiveChannelNumber(), bgcolor); */
+	}
 
 	if(curr < (*chanlist).size()) {
 		char nameAndDescription[255];

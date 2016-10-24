@@ -399,6 +399,7 @@ int CNeutrinoApp::loadSetup(const char * fname)
 #if HAVE_SPARK_HARDWARE || HAVE_DUCKBOX_HARDWARE
 	g_settings.j00zek_channellist_loop_begining_end = configfile.getInt32("j00zek_channellist_loop_begining_end", 0); // default off
 	g_settings.j00zek_channellist_name_and_descr = configfile.getInt32("j00zek_channellist_name_and_descr", 1); // default on
+	g_settings.j00zek_channellist_png_selector = configfile.getInt32("j00zek_channellist_png_selector", 0); // default off
 	g_settings.j00zek_skin_theme = configfile.getString("j00zek_skin_theme","none");
 	g_settings.hdmi_mode = configfile.getInt32("hdmi_mode", (int)COLORFORMAT_HDMI_RGB);
 #endif
@@ -1139,6 +1140,8 @@ void CNeutrinoApp::saveSetup(const char * fname)
 	configfile.setInt32( "analog_mode2", g_settings.analog_mode2 );
 #if HAVE_SPARK_HARDWARE || HAVE_DUCKBOX_HARDWARE
 	configfile.setInt32( "j00zek_channellist_loop_begining_end", g_settings.j00zek_channellist_loop_begining_end );
+	configfile.setInt32( "j00zek_channellist_name_and_descr", g_settings.j00zek_channellist_name_and_descr );
+	configfile.setInt32( "j00zek_channellist_png_selector", g_settings.j00zek_channellist_png_selector );
 	configfile.setString("j00zek_skin_theme", g_settings.j00zek_skin_theme);
 	configfile.setInt32( "hdmi_mode", g_settings.hdmi_mode );
 #endif

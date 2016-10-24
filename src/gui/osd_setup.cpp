@@ -1285,6 +1285,11 @@ void COsdSetup::showOsdChanlistSetup(CMenuWidget *menu_chanlist)
 	mc = new CMenuOptionChooser(LOCALE_J00ZEK_CHANNELLIST_NAME_DESCR, &g_settings.j00zek_channellist_name_and_descr, CHANNELLIST_NAME_AND_DESCR_OPTION, CHANNELLIST_NAME_AND_DESCR_OPTION_COUNT, true);
 	mc->setHint("", LOCALE_MENU_HINT_CHANNELLIST_SHOW_CHANNELNUMBER);
 	menu_chanlist->addItem(mc);
+
+	//show channel logo
+	mc = new CMenuOptionChooser(LOCALE_J00ZEK_CHANNELLIST_PNG_SELECTOR, &g_settings.j00zek_channellist_png_selector, OPTIONS_OFF0_ON1_OPTIONS, OPTIONS_OFF0_ON1_OPTION_COUNT, true);
+	mc->setHint("", NONEXISTANT_LOCALE);
+	menu_chanlist->addItem(mc);
 }
 
 //eventlist

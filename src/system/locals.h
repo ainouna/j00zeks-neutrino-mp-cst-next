@@ -2681,5 +2681,6 @@ typedef enum
 	LOCALE_J00ZEK_COLORTHEMEMENU_SKINS,
 	LOCALE_J00ZEK_COLORTHEMEMENU_USERSKINS,
 	LOCALE_J00ZEK_LCDMENU_SHOWMENU,
-} neutrino_locale_t;
+	LOCALE_J00ZEK_CHANNELLIST_PNG_SELECTOR,
+} neutrino_locale_t; //always sync with locals_intern.h!!!
 #endif

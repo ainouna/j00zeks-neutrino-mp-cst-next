@@ -210,6 +210,7 @@ struct SNeutrinoSettings
 #if HAVE_SPARK_HARDWARE || HAVE_DUCKBOX_HARDWARE
 	int j00zek_channellist_loop_begining_end;
 	int j00zek_channellist_name_and_descr;
+	int j00zek_channellist_png_selector;
 	std::string j00zek_skin_theme;
 	int hdmi_mode;
 	int psi_contrast;
