@@ -65,6 +65,7 @@ CThemes::CThemes()
 
 int CThemes::exec(CMenuTarget* parent, const std::string & actionKey)
 {
+	printf("CThemes::%s\n",__func__);
 	int res = menu_return::RETURN_REPAINT;
 
 	if( !actionKey.empty() )
@@ -75,6 +76,12 @@ int CThemes::exec(CMenuTarget* parent, const std::string & actionKey)
 			notifier = new CColorSetupNotifier();
 			notifier->changeNotify(NONEXISTANT_LOCALE, NULL);
 			delete notifier;
+		}
+		else if (actionKey=="disable_skin")
+		{
+			std::string mySetting = "none";
+			g_settings.skinfile = mySetting.c_str();
+			CNeutrinoApp::getInstance()->saveSetup(NEUTRINO_SETTINGS_FILE);
 		}
 		else
 		{
@@ -100,6 +107,7 @@ int CThemes::exec(CMenuTarget* parent, const std::string & actionKey)
 
 void CThemes::readThemes(CMenuWidget &themes)
 {
+	printf("CThemes::%s\n",__func__);
 	struct dirent **themelist;
 	int n;
 	const char *pfade[] = {THEMESDIR, THEMESDIR_VAR};
@@ -145,6 +153,7 @@ void CThemes::readThemes(CMenuWidget &themes)
 
 void CThemes::readSkins(CMenuWidget &themes)
 {
+	printf("CThemes::%s\n",__func__);
 	struct dirent **themelist;
 	int n;
 	const char *pfade[] = {THEMESDIR, THEMESDIR_VAR};
@@ -164,12 +173,16 @@ void CThemes::readSkins(CMenuWidget &themes)
 			{
 				char *file = themelist[count]->d_name;
 				char *pos = strstr(file, ".skin");
+				//printf("CThemes::readSkins themelist[%d]->%s\n",count,file);
 				if(pos != NULL)
 				{
+					printf("CThemes::readSkins skin found>%s\n",file);
 					if ( p == 0 && hasCVSThemes == false ) {
+						printf("CThemes::readSkins CMenuSeparator::LINE>THEMESDIR\n");
 						themes.addItem(new CMenuSeparator(CMenuSeparator::LINE | CMenuSeparator::STRING, LOCALE_J00ZEK_COLORTHEMEMENU_SKINS));
 						hasCVSThemes = true;
 					} else if ( p == 1 && hasUserThemes == false ) {
+						printf("CThemes::readSkins CMenuSeparator::LINE>THEMESDIR_VAR\n");
 						themes.addItem(new CMenuSeparator(CMenuSeparator::LINE | CMenuSeparator::STRING, LOCALE_J00ZEK_COLORTHEMEMENU_USERSKINS));
 						hasUserThemes = true;
 					}
@@ -178,20 +191,25 @@ void CThemes::readSkins(CMenuWidget &themes)
 					else
 						SkinFile = (std::string)THEMESDIR + "/" + (std::string)file;
 					*pos = '\0';
+					printf("CThemes::readSkins SkinFile>%s\n", SkinFile.c_str());
 					oj = new CMenuForwarder(file, true, "", this, SkinFile.c_str());
 					themes.addItem( oj );
 				}
 				free(themelist[count]);
 			}
-			if (g_settings.skinfile != "none")
-				oj = new CMenuForwarder(LOCALE_OPTIONS_OFF, true, "", this, "none");
 			free(themelist);
 		}
+	}
+	if (g_settings.skinfile != "none" && (hasCVSThemes || hasUserThemes))
+	{
+		oj = new CMenuForwarder(LOCALE_ADZAP_DISABLE, true, "", this, "disable_skin");
+		themes.addItem( oj ); 
 	}
 }
 
 int CThemes::Show()
 {
+	printf("CThemes::%s\n",__func__);
 	move_userDir();
 
 	std::string file_name = "";
@@ -241,6 +259,7 @@ int CThemes::Show()
 
 void CThemes::rememberOldTheme(bool remember)
 {
+	printf("CThemes::%s\n",__func__);
 	if ( remember ) {
 		oldTheme = t;
 	} else {
@@ -255,7 +274,7 @@ void CThemes::rememberOldTheme(bool remember)
 
 void CThemes::readFile(std::string filename)
 {
-
+	printf("CThemes::%s\n",__func__);
 	printf("[neutrino theme] loading %s theme\n", filename.c_str());
 	if(themefile.loadConfig(filename))
 	{
@@ -273,6 +292,7 @@ void CThemes::readFile(std::string filename)
 
 void CThemes::readSkinFile(std::string skinname)
 {
+	printf("CThemes::%s\n",__func__);
 	if (skinname.compare("none") == 0)
 	{
 		printf("[neutrino skin] skin not configured\n");
@@ -294,6 +314,7 @@ void CThemes::readSkinFile(std::string skinname)
 
 void CThemes::saveFile(std::string themename)
 {
+	printf("CThemes::%s\n",__func__);
 	setTheme(themefile);
 
 	if (themefile.getModifiedFlag()){
@@ -312,6 +333,7 @@ void CThemes::setupDefaultColors()
 
 void CThemes::setTheme(CConfigFile &configfile)
 {
+	printf("CThemes::%s\n",__func__);
 	configfile.setInt32( "menu_Head_alpha", t.menu_Head_alpha );
 	configfile.setInt32( "menu_Head_red", t.menu_Head_red );
 	configfile.setInt32( "menu_Head_green", t.menu_Head_green );
@@ -398,6 +420,7 @@ void CThemes::setTheme(CConfigFile &configfile)
 
 void CThemes::getTheme(CConfigFile &configfile)
 {
+	printf("CThemes::%s\n",__func__);
 	t.menu_Head_alpha = configfile.getInt32( "menu_Head_alpha", 0x00 );
 	t.menu_Head_red = configfile.getInt32( "menu_Head_red", 0x00 );
 	t.menu_Head_green = configfile.getInt32( "menu_Head_green", 0x0A );
@@ -489,6 +512,7 @@ void CThemes::getTheme(CConfigFile &configfile)
 
 void CThemes::getSkin(CConfigFile &configfile) //the list of attributes defined in settings.h
 {
+	printf("CThemes::%s\n",__func__);
 	s.ReloadSkin = configfile.getBool( "ReloadSkin", true );
 	s.skinEnabled = configfile.getBool( "skinEnabled", false );
 	s.bgpic = configfile.getString("bgpic","");
@@ -528,6 +552,7 @@ void CThemes::getSkin(CConfigFile &configfile) //the list of attributes defined 
 
 void CThemes::setSkin(CConfigFile &configfile) //the list of attributes defined in settings.h
 {
+	printf("CThemes::%s\n",__func__);
 	configfile.setBool( "ReloadSkin", s.ReloadSkin );
 	configfile.setBool( "skinEnabled", s.skinEnabled );
 	configfile.setString("bgpic", s.bgpic );
@@ -567,6 +592,7 @@ void CThemes::setSkin(CConfigFile &configfile) //the list of attributes defined 
 
 void CThemes::move_userDir()
 {
+	printf("CThemes::%s\n",__func__);
 	if (access(USERDIR, F_OK) == 0)
 	{
 		if (!CFileHelpers::createDir(THEMESDIR_VAR))
