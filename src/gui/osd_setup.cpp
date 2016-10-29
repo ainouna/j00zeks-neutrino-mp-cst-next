@@ -108,7 +108,7 @@ COsdSetup::~COsdSetup()
 const SNeutrinoSettings::FONT_TYPES channellist_font_sizes[] =
 {
 	SNeutrinoSettings::FONT_TYPE_CHANNELLIST,
-	SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR,
+	SNeutrinoSettings::FONT_TYPE_MOVIEBROWSER_INFO,
 	SNeutrinoSettings::FONT_TYPE_CHANNELLIST_NUMBER,
 	SNeutrinoSettings::FONT_TYPE_CHANNELLIST_EVENT,
 	SNeutrinoSettings::FONT_TYPE_CHANNEL_NUM_ZAP
@@ -166,7 +166,7 @@ const SNeutrinoSettings::FONT_TYPES other_font_sizes[] =
 	SNeutrinoSettings::FONT_TYPE_SUBTITLES,
 	SNeutrinoSettings::FONT_TYPE_FILEBROWSER_ITEM,
 	SNeutrinoSettings::FONT_TYPE_MOVIEBROWSER_LIST,
-	SNeutrinoSettings::FONT_TYPE_MOVIEBROWSER_DESC
+	SNeutrinoSettings::FONT_TYPE_MOVIEBROWSER_INFO
 };
 size_t other_font_items = sizeof(other_font_sizes)/sizeof(other_font_sizes[0]);
 
@@ -206,7 +206,6 @@ font_sizes_struct neutrino_font[SNeutrinoSettings::FONT_TYPE_COUNT] =
 	{LOCALE_FONTSIZE_INFOBAR_CHANNAME   ,  30, CNeutrinoFonts::FONT_STYLE_BOLD   , 0},
 	{LOCALE_FONTSIZE_INFOBAR_INFO       ,  20, CNeutrinoFonts::FONT_STYLE_REGULAR, 1},
 	{LOCALE_FONTSIZE_INFOBAR_SMALL      ,  14, CNeutrinoFonts::FONT_STYLE_REGULAR, 1},
-	{LOCALE_FONTSIZE_SUBTITLES          ,  25, CNeutrinoFonts::FONT_STYLE_BOLD   , 0},
 	{LOCALE_FONTSIZE_FILEBROWSER_ITEM   ,  16, CNeutrinoFonts::FONT_STYLE_BOLD   , 1},
 	{LOCALE_FONTSIZE_MENU_HINT          ,  16, CNeutrinoFonts::FONT_STYLE_REGULAR, 0},
 	{LOCALE_FONTSIZE_MOVIEBROWSER_HEAD  ,  15, CNeutrinoFonts::FONT_STYLE_REGULAR, 2},

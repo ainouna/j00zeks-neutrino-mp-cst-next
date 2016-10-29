@@ -73,7 +73,7 @@
 #define HEADER_LIST_FONT_COLOR COL_MENUCONTENT_TEXT
 
 #define FONT_LIST g_Font[SNeutrinoSettings::FONT_TYPE_MOVIEBROWSER_LIST]
-#define FONT_HEADER_LIST g_Font[SNeutrinoSettings::FONT_TYPE_MOVIEBROWSER_DESC]
+#define FONT_HEADER_LIST g_Font[SNeutrinoSettings::FONT_TYPE_MOVIEBROWSER_HEAD]
 #define FONT_TITLE g_Font[SNeutrinoSettings::FONT_TYPE_MENU_TITLE];
 
 //////////////////////////////////////////////////////////////////////
