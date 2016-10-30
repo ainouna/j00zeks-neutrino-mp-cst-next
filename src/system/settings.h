@@ -967,6 +967,7 @@ struct SNeutrinoSettings
 		ITEM_LIVESTREAM_RESOLUTION = 31,
 		ITEM_ADZAP = 32,
 
+		ITEM_SOFTCAM_RESTART = 36,
 		ITEM_MAX   // MUST be always the last in the list
 	} USER_ITEM;
 	typedef struct {

@@ -406,6 +406,11 @@ bool CUserMenu::showUserMenu(neutrino_msg_t msg)
 			menu_item->setHint(NEUTRINO_ICON_HINT_RELOAD_CHANNELS, LOCALE_MENU_HINT_RESTART_TUNER);
 			break;
 #if HAVE_SPARK_HARDWARE || HAVE_DUCKBOX_HARDWARE
+		case SNeutrinoSettings::ITEM_SOFTCAM_RESTART:
+			keyhelper.get(&key,&icon);
+			menu_item = new CMenuForwarder(LOCALE_J00ZEK_OSCAM_RESTART, true, NULL, neutrino, "j00zek_restartoscam", key, icon);
+			menu_item->setHint(NEUTRINO_ICON_HINT_SOFT_RESTART, LOCALE_MENU_HINT_SOFT_RESTART);
+			break;
 		case SNeutrinoSettings::ITEM_THREE_D_MODE:
 			keyhelper.get(&key,&icon);
 			menu_item = new CMenuForwarder(LOCALE_THREE_D_SETTINGS, true, NULL, neutrino, "3dmode", key, icon);
