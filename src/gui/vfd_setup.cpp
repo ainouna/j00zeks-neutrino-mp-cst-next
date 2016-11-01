@@ -128,6 +128,17 @@ const CMenuOptionChooser::keyval OPTIONS_OFF_ON_OPTIONS[OPTIONS_OFF_ON_OPTION_CO
 	{ 0, LOCALE_OPTIONS_OFF },
 	{ 1, LOCALE_OPTIONS_ON  }
 };
+
+#define OPTIONS_LCD_TIME_FORMAT_COUNT 6
+const CMenuOptionChooser::keyval OPTIONS_LCD_TIME_FORMAT[OPTIONS_LCD_TIME_FORMAT_COUNT] =
+{
+	{ 0, LOCALE_J00ZEK_VFD_TIME_FORMAT_DISABLE },
+	{ 1, LOCALE_J00ZEK_VFD_TIME_FORMAT_HH_COLON_MM  },
+	{ 2, LOCALE_J00ZEK_VFD_TIME_FORMAT_H_COLON_MM  },
+	{ 3, LOCALE_J00ZEK_VFD_TIME_FORMAT_H_DOT_MM  },
+	{ 4, LOCALE_J00ZEK_VFD_TIME_FORMAT_HH_MM  },
+	{ 5, LOCALE_J00ZEK_VFD_TIME_FORMAT_TIME_AND_DATE  },
+};
 #endif
 
 int CVfdSetup::showSetup()
@@ -178,20 +189,24 @@ int CVfdSetup::showSetup()
 		vfds->addItem(lcd_clock_channelname_menu);
 
 #if HAVE_DUCKBOX_HARDWARE
-		if (g_settings.lcd_vfd_size > 4) {
+		//scroll items on vfd
+		if (g_settings.lcd_vfd_size > 4)
 			vfds->addItem(new CMenuOptionNumberChooser(LOCALE_LCDMENU_VFD_SCROLL, &g_settings.lcd_vfd_scroll, true, 0, 999, this, 0, 0, NONEXISTANT_LOCALE, true));
-			//display menu items on vfd
-			vfds->addItem(new CMenuOptionChooser(LOCALE_J00ZEK_LCDMENU_SHOWMENU, &g_settings.lcd_show_menu, OPTIONS_OFF0_ON1_OPTIONS, OPTIONS_OFF0_ON1_OPTION_COUNT, true));
-		} else {
+		else
 			vfds->addItem(new CMenuOptionNumberChooser(LOCALE_LCDMENU_VFD_SCROLL, &g_settings.lcd_vfd_scroll, true, 0, 999, this, 0, 0, NONEXISTANT_LOCALE, false));
-			//display menu items on vfd
-			vfds->addItem(new CMenuOptionChooser(LOCALE_J00ZEK_LCDMENU_SHOWMENU, &g_settings.lcd_show_menu, OPTIONS_OFF0_ON1_OPTIONS, OPTIONS_OFF0_ON1_OPTION_COUNT, false));
-		}
 
+		if (g_settings.lcd_vfd_size >= 4) {
+			//vfd format in standby
+			vfds->addItem(new CMenuOptionChooser(LOCALE_J00ZEK_VFD_TIME_FORMAT, &g_settings.lcd_vfd_time_format, OPTIONS_LCD_TIME_FORMAT, OPTIONS_LCD_TIME_FORMAT_COUNT, true));
+			//vfd mrygajacy dwukropek
+			vfds->addItem(new CMenuOptionChooser(LOCALE_J00ZEK_VFD_TIME_BLINKING_DOT, &g_settings.lcd_vfd_time_blinking_dot, OPTIONS_OFF0_ON1_OPTIONS, OPTIONS_OFF0_ON1_OPTION_COUNT, vfd_enabled));
+		}
 		//recicon
-		CMenuOptionChooser* ri = new CMenuOptionChooser(LOCALE_LCDMENU_RECICON, &g_settings.lcd_vfd_recicon, LCDMENU_RECICON_OPTIONS, LCDMENU_RECICON_OPTION_COUNT, true);
-		ri->setHint("", LOCALE_MENU_HINT_VFD_RECICON);
+		CMenuOptionChooser* ri = new CMenuOptionChooser(LOCALE_J00ZEK_VFD_RECICON, &g_settings.lcd_vfd_recicon, LCDMENU_RECICON_OPTIONS, LCDMENU_RECICON_OPTION_COUNT, true);
+		ri->setHint("", LOCALE_J00ZEK_VFD_RECICON_HINT);
 		vfds->addItem(ri);
+		//vfd LED in standby
+		vfds->addItem(new CMenuOptionChooser(LOCALE_J00ZEK_VFD_LED_IN_STANDBY, &g_settings.lcd_vfd_led_in_standby, OPTIONS_OFF0_ON1_OPTIONS, OPTIONS_OFF0_ON1_OPTION_COUNT, vfd_enabled));
 #elif HAVE_SPARK_HARDWARE
 		vfds->addItem(new CMenuOptionNumberChooser(LOCALE_LCDMENU_VFD_SCROLL, &g_settings.lcd_vfd_scroll, (g_info.hw_caps->display_type == HW_DISPLAY_LINE_TEXT), 0, 999, this, 0, 0, NONEXISTANT_LOCALE, true));
 #else

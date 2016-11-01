@@ -948,15 +948,20 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	g_settings.lcd_setting_dim_brightness = configfile.getInt32("lcd_dim_brightness", 0);
 	g_settings.lcd_info_line = configfile.getInt32("lcd_info_line", 0);//channel name or clock
 #if HAVE_DUCKBOX_HARDWARE || HAVE_SPARK_HARDWARE
-	if ( j00zekVFDsize <= 4) {
+	if ( j00zekVFDsize < 4) {
 		g_settings.lcd_vfd_scroll = configfile.getInt32("lcd_vfd_scroll", 0);
-		g_settings.lcd_show_menu = configfile.getInt32("lcd_show_menu", 0);
+		g_settings.lcd_vfd_time_format = configfile.getInt32("lcd_vfd_time_format", 0);
+	} else if ( j00zekVFDsize == 4) {
+		g_settings.lcd_vfd_scroll = configfile.getInt32("lcd_vfd_scroll", 0);
+		g_settings.lcd_vfd_time_format = configfile.getInt32("lcd_vfd_time_format", 4);
 	} else {
 		g_settings.lcd_vfd_scroll = configfile.getInt32("lcd_vfd_scroll", 1);
-		g_settings.lcd_show_menu = configfile.getInt32("lcd_show_menu", 1);
+		g_settings.lcd_vfd_time_format = configfile.getInt32("lcd_vfd_time_format", 1);
 	}
 	g_settings.lcd_vfd_recicon = configfile.getInt32("lcd_vfd_recicon", 0);
 	g_settings.lcd_vfd_size = configfile.getInt32("lcd_vfd_size", j00zekVFDsize );
+	g_settings.lcd_vfd_led_in_standby = configfile.getInt32("lcd_vfd_led_in_standby", 1);
+	g_settings.lcd_vfd_time_blinking_dot = configfile.getInt32("lcd_vfd_time_blinking_dot", 1);
 #endif
 
 	//Picture-Viewer
@@ -1565,7 +1570,9 @@ void CNeutrinoApp::saveSetup(const char * fname)
 	configfile.setInt32("lcd_vfd_scroll", g_settings.lcd_vfd_scroll);
 	configfile.setInt32("lcd_vfd_recicon", g_settings.lcd_vfd_recicon);
 	configfile.setInt32("lcd_vfd_size", j00zekVFDsize);
-	configfile.setInt32("lcd_show_menu", g_settings.lcd_show_menu);
+	configfile.setInt32("lcd_vfd_time_format", g_settings.lcd_vfd_time_format);
+	configfile.setInt32("lcd_vfd_time_blinking_dot", g_settings.lcd_vfd_time_blinking_dot);
+	configfile.setInt32("lcd_vfd_led_in_standby", g_settings.lcd_vfd_led_in_standby);
 #endif
 
 	//Picture-Viewer

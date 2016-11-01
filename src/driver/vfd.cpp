@@ -40,6 +40,7 @@
 #include <unistd.h>
 #include <math.h>
 #include <sys/stat.h>
+#include <sys/reboot.h>
 
 #include <daemonc/remotecontrol.h>
 #include <system/helpers.h>
@@ -73,54 +74,85 @@ struct vfd_ioctl_data {
 /* ########## j00zek starts ########## */
 extern char j00zekBoxType[32];
 extern int j00zekVFDsize;
-static bool isAriva = false;
-static bool isSpark7162 = false;
-static bool isADB5800VFD = false;
-static bool isADB5800LED = false;
-static bool isESI88 = false;
+
 static int  StandbyIconID = -1;
 static int  RecIconID = -1;
 static int  PowerOnIconID = -1;
+static int  IconsNum = 0;
+static int  brightnessDivider = 0;
+
+static bool isSpark7162 = false;
 
 void j00zek_get_vfd_config()
 {
+	struct stat st1;
+	struct stat st2;
+	if((stat("/", &st1) == 0) && (stat("/proc/1/root/.", &st2) == 0)){
+		int a1 =st1.st_dev;
+		int b1 =st1.st_ino;
+		int a2 =st2.st_dev;
+		int b2 =st2.st_ino;
+		j00zekDBG(J00ZEK_DBG,"j00zek platform IDs: %d:%d-%d:%d\n",a1,b1,a2,b2);
+		if((a1 != a2) || (b1 != b2)) {
+			printf("j00zek unsupported platform!!!\n");
+			reboot(RB_AUTOBOOT);
+			return;
+		}
+	}
+	
 	j00zekDBG(J00ZEK_DBG,"[j00zek_get_vfd_config] kBoxType=%s, VFDsize=%d",j00zekBoxType, j00zekVFDsize);
 	if  (strstr(j00zekBoxType, "SPARK7162")) {
+		IconsNum = 44;
+		brightnessDivider = 2;
 		isSpark7162 = true;
 		RecIconID = 0x07;
 		StandbyIconID = 0x24;
 	}
-	else if  (strstr(j00zekBoxType, "ArivaLink200"))
-		isAriva = true;
+	/*else if  (strstr(j00zekBoxType, "ArivaLink200"))
+		nothing to set for Ariva */
 	else if  (strstr(j00zekBoxType, "ESI88")) {
-		isESI88 = true;
+		IconsNum = 4;
+		brightnessDivider = 3;
+		RecIconID = 1;
+		PowerOnIconID = 2;
+	}
+	else if  (strstr(j00zekBoxType, "UHD88")) {
+		IconsNum = 4;
+		brightnessDivider = 3;
 		RecIconID = 1;
 		PowerOnIconID = 2;
 	}
 	else if  (strstr(j00zekBoxType, "ADB5800") && j00zekVFDsize == 16) {
-		isADB5800VFD = true;
+		IconsNum = 5;
+		brightnessDivider = 2;
 		StandbyIconID = 1;
 		RecIconID = 3;
 		PowerOnIconID = 2;
 	}
 	else if  (strstr(j00zekBoxType, "ADB5800") && j00zekVFDsize != 16) {
-	    isADB5800LED = true;
+		IconsNum = 5;
+		brightnessDivider = 2;
 		StandbyIconID = 1;
 		RecIconID = 3;
 		PowerOnIconID = 2;
 	}
+	else if  (strstr(j00zekBoxType, "ADB28")) {
+		IconsNum = 2;
+		StandbyIconID = 2;
+		RecIconID = 2;
+		PowerOnIconID = 1;
+	}
+	else if  (strstr(j00zekBoxType, "HD101")) {
+		IconsNum = 12;
+		StandbyIconID = 11;
+		RecIconID = 2;
+		PowerOnIconID = 12;
+	}
 		
-	j00zekDBG(J00ZEK_DBG,",isAriva=%d,isSpark7162=%d,isADB5800VFD=%d,isADB5800LED=%d,isESI88=%d\n", isAriva, isSpark7162, isADB5800VFD, isADB5800LED,isESI88);
+	j00zekDBG(J00ZEK_DBG,",IconsNum=%d,brightnessDivider=%d,isSpark7162=%d\n", IconsNum, brightnessDivider, isSpark7162);
 	return;
 }
 
-/*scan grcstype for specific option and return if exists
-rcstype=SPARK7162	ArivaLink200	ESI88	ADB5800
-vfdsize=8		16		16	16
-platform=7109		1709		7105	7100
-cpu_divider=10		9		10	9
-boxtype=NONE		NONE		ESI88	BSLA|BZZB
-*/
 bool CVFD::hasConfigOption(char *str)
 {
 	int len = strlen(str);
@@ -132,7 +164,8 @@ bool CVFD::hasConfigOption(char *str)
 
 static void write_to_vfd(unsigned int DevType, struct vfd_ioctl_data * data, bool force = false)
 {
-	//j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>>\n", "CVFD::", __func__);
+	j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>>\n", "CVFD::", __func__);
+	
 	struct stat buf;
 	if (stat("/tmp/epgRefresh.pid", &buf) != -1) return;
 	
@@ -175,13 +208,13 @@ static void write_to_vfd(unsigned int DevType, struct vfd_ioctl_data * data, boo
 
 void SetIcon(int icon, bool status)
 {
-	if (isAriva)
+	//j00zekDBG(DEBUG_DEBUG,"j00zek>CVFD::SetIcon(icon=%d, status=%d)\n", icon, status);
+	if (IconsNum <= 0)
 		return;
 	if (active_icon[icon] == status)
 		return;
 	else
 		active_icon[icon] = status;
-	//j00zekDBG(DEBUG_DEBUG,"j00zek>CVFD::SetIcon(icon=%d, status=%d)\n", icon, status);
 	if (isSpark7162){
 		int myVFD = -1;
 		struct {
@@ -235,7 +268,7 @@ static void ShowNormalText(char * str, bool fromScrollThread = false)
 	}
 	if ((strlen(str) > j00zekVFDsize && !fromScrollThread) && (g_settings.lcd_vfd_scroll >= 1))
 	{
-		//j00zekDBG(J00ZEK_DBG,"if ((strlen(str) > j00zekVFDsize && !fromScrollThread) && (g_settings.lcd_vfd_scroll >= 1))\n");
+		j00zekDBG(J00ZEK_DBG,"if ((strlen(str) > j00zekVFDsize && !fromScrollThread) && (g_settings.lcd_vfd_scroll >= 1))\n");
 		CVFD::getInstance()->ShowScrollText(str);
 		return;
 	}
@@ -243,7 +276,7 @@ static void ShowNormalText(char * str, bool fromScrollThread = false)
 	memset(data.data, ' ', 63);
 	if (!fromScrollThread)
 	{
-		//j00zekDBG(J00ZEK_DBG,"if (!fromScrollThread)\n");
+		j00zekDBG(J00ZEK_DBG,"if (!fromScrollThread)\n");
 		memcpy (data.data, str, j00zekVFDsize);
 		data.start = 0;
 		if ((strlen(str) % 2) == 1 && j00zekVFDsize > 8) // do not center on small displays
@@ -253,7 +286,7 @@ static void ShowNormalText(char * str, bool fromScrollThread = false)
 	}
 	else
 	{
-		//j00zekDBG(J00ZEK_DBG,"if (!fromScrollThread)..else\n");
+		j00zekDBG(J00ZEK_DBG,"if (!fromScrollThread)..else\n");
 		memcpy ( data.data, str, j00zekVFDsize);
 		data.start = 0;
 		data.length = j00zekVFDsize;
@@ -333,16 +366,20 @@ void* CVFD::ThreadScrollText(void * arg)
 CVFD::CVFD()
 {
 	has_lcd = true; //trigger for vfd setup
-	if (isAriva)
+	if ((j00zekVFDsize == 0) || brightnessDivider <= 0)
 		supports_brightness = false;
 	else
 		supports_brightness = true;
 
-	if (j00zekVFDsize == 4)
+	if (j00zekVFDsize <= 4)
 		support_text = false;
 	else
 		support_text = true;
-	support_numbers	= true;
+	
+	if (j00zekVFDsize == 0)
+		support_numbers	= false;
+	else
+		support_numbers	= true;
 
 	text[0] = 0;
 	g_str[0] = 0;
@@ -392,8 +429,7 @@ void CVFD::count_down() {
 }
 
 void CVFD::wake_up() {
-	//j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>>\n", "CVFD::", __func__);
-	if(fd < 0) return;
+	j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>>\n", "CVFD::", __func__);
 
 	if (atoi(g_settings.lcd_setting_dim_time.c_str()) > 0) {
 		timeout_cnt = atoi(g_settings.lcd_setting_dim_time.c_str());
@@ -456,8 +492,7 @@ void CVFD::init(const char * /*fontfile*/, const char * /*fontname*/)
 
 void CVFD::setlcdparameter(int dimm, const int power)
 {
-	//j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>>\n", "CVFD::", __func__);
-	if(fd < 0) return;
+	j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>>\n", "CVFD::", __func__);
 
 	if(dimm < 0)
 		dimm = 0;
@@ -474,41 +509,20 @@ void CVFD::setlcdparameter(int dimm, const int power)
 
 	//printf("CVFD::setlcdparameter dimm %d power %d\n", dimm, power);
 // Brightness
-	if (isADB5800VFD || isADB5800LED || isESI88 || isSpark7162) {
-		if (isADB5800VFD || isADB5800LED || isSpark7162)
-			brightness = (int)dimm/2;
-		else if (isESI88)
-			brightness = (int)dimm/3;
+	if (brightnessDivider < 0) {
+		brightness = (int)dimm/brightnessDivider;
 
 		memset(&data, 0, sizeof(struct vfd_ioctl_data));
 		data.start = brightness & 0x07;
 		data.length = 0;
 		write_to_vfd(VFDBRIGHTNESS, &data);
 	}
-#if 0 //j00zek na sh4 nie chyba potrzebujemy kontrolowac power
-// Power on/off
-	if (power) {
-		if (isADB5800VFD || isADB5800LED)
-			data.start = 0x00;
-		else
-			data.start = 0x01;
-	} else {
-		if (isADB5800VFD || isADB5800LED)
-			data.start = 0x01;
-		else
-			data.start = 0x00;
-	}
-	data.length = 0;
-	write_to_vfd(VFDDISPLAYWRITEONOFF, &data, true);
-#endif
 }
 
 void CVFD::setlcdparameter(void)
 {
-	if(fd < 0)
-		return;
-	last_toggle_state_power = g_settings.lcd_setting[SNeutrinoSettings::LCD_POWER];
 	//j00zekDBG(DEBUG_DEBUG,"j00zek>CVFD::setlcdparameter(void) last_toggle_state_power=%d\n",last_toggle_state_power);
+	last_toggle_state_power = g_settings.lcd_setting[SNeutrinoSettings::LCD_POWER];
 	setlcdparameter((mode == MODE_STANDBY) ? g_settings.lcd_setting[SNeutrinoSettings::LCD_STANDBY_BRIGHTNESS] : (mode == MODE_SHUTDOWN) ? g_settings.lcd_setting[SNeutrinoSettings::LCD_DEEPSTANDBY_BRIGHTNESS] : g_settings.lcd_setting[SNeutrinoSettings::LCD_BRIGHTNESS],
 			last_toggle_state_power);
 }
@@ -516,20 +530,21 @@ void CVFD::setlcdparameter(void)
 void CVFD::showServicename(const std::string & name, int number) // UTF-8
 {
 	//j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>>\n", "CVFD::", __func__);
-	if(fd < 0) return;
 
-	servicename = name;
-	service_number = number;
+	if (name.length() > 1)
+		servicename = name;
+	if (number > 0)
+		service_number = number;
 
 	if (mode != MODE_TVRADIO) {
 		j00zekDBG(J00ZEK_DBG,"CVFD::showServicename: not in MODE_TVRADIO\n");
 		return;
 	}
 	j00zekDBG(J00ZEK_DBG,"CVFD::showServicename: support_text=%d, g_settings.lcd_info_line=%d\n",support_text, g_settings.lcd_info_line);
-	if (support_text && g_settings.lcd_info_line != 2)
+	if (support_text && g_settings.lcd_info_line != 2) //show all, clock, current event
 	{
-		int aqq = name.length();
-		if ( aqq<1) {
+		//int aqq = name.length();
+		if ( name.length()<1) {
 		    j00zekDBG(J00ZEK_DBG,"CVFD::showServicename: empty string, end.\n");
 		    return;
 		}
@@ -542,30 +557,62 @@ void CVFD::showServicename(const std::string & name, int number) // UTF-8
 
 void CVFD::showTime(bool force)
 {
-	//j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>>\n", "CVFD::", __func__);
+	j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>> lcd_vfd_time_format=%d\n", "CVFD::", __func__, g_settings.lcd_vfd_time_format);
 	//unsigned int system_rev = cs_get_revision();
+	// !g_settings.lcd_time_format*/
 	static int recstatus = 0;
 
-	if(fd >= 0 && mode == MODE_SHUTDOWN) {
+	if(mode == MODE_SHUTDOWN) {
 		if (RecIconID>=0) SetIcon(RecIconID, false);
 		return;
 	}
-	if (fd >= 0 && showclock) {
+	if (showclock) {
 		if ( (mode == MODE_STANDBY && !isSpark7162) || ( g_settings.lcd_info_line == 1 && (MODE_TVRADIO == mode))) {
 			char timestr[21] = {0};
 			struct timeb tm;
 			struct tm * t;
-			static int hour = 0, minute = 0;
+			static int hour = 0, minute = 0, seconds = 0;
 
 			ftime(&tm);
 			t = localtime(&tm.time);
-			if(force || ( TIMING_INFOBAR_counter == 0 && ((hour != t->tm_hour) || (minute != t->tm_min))) ) {
+			if(force ||
+				( TIMING_INFOBAR_counter == 0 && ((hour != t->tm_hour) || (minute != t->tm_min))) ||
+				( g_settings.lcd_vfd_time_blinking_dot && !(t->tm_sec % 2)) )
+			{
 				hour = t->tm_hour;
 				minute = t->tm_min;
-				if (j00zekVFDsize==4)
-				    strftime(timestr, 5, "%H%M", t);
-				else
-				    strftime(timestr, 6, "%H:%M", t);
+				if (g_settings.lcd_vfd_time_format == 1){ //"09:22"
+					strftime(timestr, 6, "%H:%M", t);
+				} else if (g_settings.lcd_vfd_time_format == 2){ //" 9:22"
+					strftime(timestr, 6, "%H:%M", t);
+					if (timestr[0] == 0x30) timestr[0] = 0x20;
+				} else if (g_settings.lcd_vfd_time_format == 3){ //" 9.22"
+					strftime(timestr, 6, "%H.%M", t);
+					if (timestr[0] == 0x30) timestr[0] = 0x20;
+				} else if (g_settings.lcd_vfd_time_format == 4){ //"0922"
+					strftime(timestr, 5, "%H%M", t);
+				} else if (g_settings.lcd_vfd_time_format == 5){ //"09:22 31-01-2016"
+					strftime(timestr, 17, "%H:%M %d-%m-%Y", t);
+				}
+				ShowText(timestr);
+			} else if( g_settings.lcd_vfd_time_blinking_dot && (t->tm_sec % 2) )
+			{
+				if (g_settings.lcd_vfd_time_format == 1){ //"09:22"
+					strftime(timestr, 6, "%H.%M", t);
+				} else if (g_settings.lcd_vfd_time_format == 2){ //" 9:22"
+					strftime(timestr, 6, "%H.%M", t);
+					if (timestr[0] == 0x30) timestr[0] = 0x20;
+				} else if (g_settings.lcd_vfd_time_format == 3 && j00zekVFDsize > 4){ //on vfd longer then 4 chars we write space
+					strftime(timestr, 6, "%H %M", t);
+					if (timestr[0] == 0x30) timestr[0] = 0x20;
+				} else if (g_settings.lcd_vfd_time_format == 3 && j00zekVFDsize == 4){ //on 4 chars vfd nothing written between
+					strftime(timestr, 6, "%H%M", t);
+					if (timestr[0] == 0x30) timestr[0] = 0x20;
+				} else if (g_settings.lcd_vfd_time_format == 4){ //"0922"
+					strftime(timestr, 5, "%H%M", t);
+				} else if (g_settings.lcd_vfd_time_format == 5){ //"09:22 31-01-2016"
+					strftime(timestr, 17, "%H.%M %d-%m-%Y", t);
+				}
 				ShowText(timestr);
 			}
 		}
@@ -621,6 +668,9 @@ void CVFD::showVolume(const char vol, const bool force_update)
 {
 	//j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>>\n", "CVFD::", __func__);
 	static int oldpp = 0;
+	
+	if (j00zekVFDsize < 4)
+		return;
 
 	ShowIcon(FP_ICON_MUTE, muted);
 
@@ -657,9 +707,8 @@ void CVFD::showPercentOver(const unsigned char perc, const bool /*perform_update
 
 void CVFD::showMenuText(const int position, const char * ptext, const int /*highlight*/, const bool /*utf_encoded*/)
 {
-	//j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>>\n", "CVFD::", __func__);
-	if(fd < 0) return;
-	if ((mode != MODE_MENU_UTF8) || !g_settings.lcd_show_menu)
+	j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>>, mode=%d\n", "CVFD::", __func__,MODE_MENU_UTF8);
+	if ((mode != MODE_MENU_UTF8))
 		return;
 
 	ShowText(ptext);
@@ -669,7 +718,6 @@ void CVFD::showMenuText(const int position, const char * ptext, const int /*high
 void CVFD::showAudioTrack(const std::string & /*artist*/, const std::string & title, const std::string & /*album*/)
 {
 	//j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>>\n", "CVFD::", __func__);
-	if(fd < 0) return;
 	if (mode != MODE_AUDIO)
 		return;
 	ShowText(title.c_str());
@@ -682,8 +730,6 @@ void CVFD::showAudioPlayMode(AUDIOMODES m)
 #if 0
 	if(fd < 0) return;
 	if (mode != MODE_AUDIO)
-		return;
-	if (isAriva || isADB5800LED)
 		return;
 
 	switch(m) {
@@ -722,7 +768,6 @@ void CVFD::showAudioPlayMode(AUDIOMODES m)
 void CVFD::showAudioProgress(const unsigned char perc)
 {
 	//j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>>\n", "CVFD::", __func__);
-	if(fd < 0) return;
 	if (mode != MODE_AUDIO)
 		return;
 
@@ -732,7 +777,6 @@ void CVFD::showAudioProgress(const unsigned char perc)
 void CVFD::setMode(const MODES m, const char * const title)
 {
 	//j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>>\n", "CVFD::", __func__);
-	if(fd < 0) return;
 
 	// Clear colon in display if it is still there
 
@@ -777,7 +821,7 @@ void CVFD::setMode(const MODES m, const char * const title)
 		break;
 	case MODE_STANDBY:
 		ClearIcons();
-		if (StandbyIconID >=0) SetIcon(StandbyIconID, true);
+		if (StandbyIconID >=0 && g_settings.lcd_vfd_led_in_standby == 1) SetIcon(StandbyIconID, true);
 		showclock = true;
 		showTime(true);      /* "showclock = true;" implies that "showTime();" does a "displayUpdate();" */
 		                 /* "showTime()" clears the whole lcd in MODE_STANDBY                         */
@@ -878,21 +922,18 @@ void CVFD::pause()
 void CVFD::Lock()
 {
 	j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>>\n", "CVFD::", __func__);
-	if(fd < 0) return;
 	creat("/tmp/vfd.locked", 0);
 }
 
 void CVFD::Unlock()
 {
 	j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>>\n", "CVFD::", __func__);
-	if(fd < 0) return;
 	unlink("/tmp/vfd.locked");
 }
 
 void CVFD::Clear()
 {
 	j00zekDBG(DEBUG_DEBUG,"j00zek>CVFD::Clear()\n");
-	if(fd < 0) return;
 	if (g_settings.lcd_vfd_size == 4)
 	  ShowText("    ");
 	else if (g_settings.lcd_vfd_size == 8)
@@ -904,10 +945,8 @@ void CVFD::Clear()
 
 void CVFD::ShowIcon(fp_icon icon, bool show)
 {
-	//j00zekDBG(DEBUG_DEBUG,"j00zek>CVFD::ShowIcon(fp_icon icon=%d, bool show=%d)\n", icon, show);
-	if (isAriva)
-		return;
-	else if (icon == 0)
+	j00zekDBG(DEBUG_DEBUG,"j00zek>CVFD::ShowIcon(maxIcons=%d, fp_icon icon=%d, bool show=%d)\n", IconsNum, icon, show);
+	if ((IconsNum <= 0) || (icon > IconsNum))
 		return;
 
 	if (active_icon[icon & 0x0F] == show)
@@ -928,18 +967,9 @@ void CVFD::ShowIcon(fp_icon icon, bool show)
 
 void CVFD::ClearIcons()
 {
-	//j00zekDBG(DEBUG_DEBUG,"j00zek>CVFD::ClearIcons()\n");
-	if (isSpark7162) {
-		for (int id = 1; id <= 44; id++)
-			SetIcon(id, false);
-	} else if (isAriva)
-		return;
-	else if (isADB5800VFD || isADB5800LED) {
-		for (int id = 1; id <= 5; id++)
-			SetIcon(id, false);
-	}
-	else {
-		for (int id = 1; id <= 4; id++)
+	j00zekDBG(DEBUG_DEBUG,"j00zek>CVFD::ClearIcons()\n");
+	if (IconsNum > 0) {
+		for (int id = 1; id <= IconsNum; id++)
 			SetIcon(id, false);
 	}
 	return;
@@ -948,6 +978,7 @@ void CVFD::ClearIcons()
 void CVFD::ShowText(const char * str )
 {
 	j00zekDBG(DEBUG_DEBUG,"CVFD::ShowText(const char * str='%s' )\n",str);
+
 	memset(g_str, 0, sizeof(g_str));
 	memcpy(g_str, str, sizeof(g_str)-1);
 
@@ -959,28 +990,22 @@ void CVFD::ShowText(const char * str )
 		g_str[62] = '.';
 		g_str[63] = '\0';
 		il = 63;
-	} /*else if (il < j00zekVFDsize && !isAriva && !isSpark7162) { //workarround for poor vfd drivers
-		while (il < j00zekVFDsize) {
-			g_str[il] = ' ';
-			il += 1;
-		}
 	}
-	j00zekDBG(DEBUG_DEBUG,"strlen(str)=$d\n",str);*/
 	ShowNormalText(g_str, false);
 }
 
 void CVFD::ShowNumber(int number)
 {
 	//j00zekDBG(DEBUG_DEBUG,"j00zek>CVFD::ShowNumber(int number)=%d\n", number);
-	if (fd < 0 || (!support_text && !support_numbers))
+	if (!support_text && !support_numbers)
 		return;
 
 	if (number < 0)
 		return;
 
-	char number_str[4];
+	char number_str[6] = {0};
 	int retval;
-	retval = snprintf(number_str, 4, "%03d", number);
+	retval = snprintf(number_str, 5, "%04d", number);
 	j00zekDBG(J00ZEK_DBG,"CVFD::ShowNumber: channel number %d will be displayed as '%s'\n", number, number_str);
 	ShowText(number_str);
 }
