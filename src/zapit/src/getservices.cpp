@@ -1345,8 +1345,8 @@ int CServiceManager::GetMaxNumber(bool radio)
 	}
 	return i+1;
 }
-#if 0 
-//never used
+#if USE_BAT
+// used in BAT search
 void CServiceManager::FreeNumber(int number, bool radio)
 {
 	service_number_map_t * channel_numbers = radio ? &radio_numbers : &tv_numbers;
