@@ -2145,8 +2145,9 @@ void CChannelList::updateVfd()
 	if (g_settings.lcd_info_line == 1) //j00zek nothing to do if user wants only clock
 		return;
 	else if (g_settings.lcd_info_line == 2){
-		char ChannelID[6]; //j00zek our vfd can display 64 chars max
-		snprintf(ChannelID, sizeof(ChannelID), "%03Lu", chan->getChannelID());
+		char ChannelID[6] = {0};
+/*		snprintf(ChannelID, sizeof(ChannelID), "%04Lu", chan->getChannelID()); */
+		snprintf(ChannelID, sizeof(ChannelID), "%04u", (selected+1));
 		CVFD::getInstance()->showMenuText(0, ChannelID, -1, true);
 	}
 	else if (!(chan->currentEvent.description.empty())) {

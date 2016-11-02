@@ -418,7 +418,7 @@ void CVFD::count_down() {
 	}
 	//j00zek: ???
 	if (g_settings.lcd_info_line && TIMING_INFOBAR_counter > 0) {
-		//j00zekDBG(DEBUG_DEBUG,"j00zek>CVFD:count_down g_settings.lcd_info_line && TIMING_INFOBAR_counter=%d\n",TIMING_INFOBAR_counter);
+		j00zekDBG(DEBUG_DEBUG,"j00zek>CVFD:count_down g_settings.lcd_info_line && TIMING_INFOBAR_counter=%d\n",TIMING_INFOBAR_counter);
 		TIMING_INFOBAR_counter--;
 		if (TIMING_INFOBAR_counter == 0) {
 			if (g_settings.lcd_setting_dim_brightness > -1) {
@@ -700,12 +700,12 @@ void CVFD::showVolume(const char vol, const bool force_update)
 	}
 }
 
-void CVFD::showPercentOver(const unsigned char perc, const bool /*perform_update*/, const MODES origin)
+void CVFD::showPercentOver(const unsigned char /*perc*/, const bool /*perform_update*/, const MODES /*origin*/)
 {
 	//j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>>\n", "CVFD::", __func__);
 }
 
-void CVFD::showMenuText(const int position, const char * ptext, const int /*highlight*/, const bool /*utf_encoded*/)
+void CVFD::showMenuText(const int /*position*/, const char * ptext, const int /*highlight*/, const bool /*utf_encoded*/)
 {
 	j00zekDBG(DEBUG_DEBUG,"j00zek>%s:%s >>>, mode=%d\n", "CVFD::", __func__,MODE_MENU_UTF8);
 	if ((mode != MODE_MENU_UTF8))
@@ -934,12 +934,14 @@ void CVFD::Unlock()
 void CVFD::Clear()
 {
 	j00zekDBG(DEBUG_DEBUG,"j00zek>CVFD::Clear()\n");
-	if (g_settings.lcd_vfd_size == 4)
-	  ShowText("    ");
+	if (g_settings.lcd_vfd_size == 16)
+		ShowText("                ");
 	else if (g_settings.lcd_vfd_size == 8)
-	  ShowText("        ");
-	else
-	  ShowText("                ");
+		ShowText("        ");
+	else if (g_settings.lcd_vfd_size == 4)
+		ShowText("    ");
+	else if (g_settings.lcd_vfd_size >= 1)
+		ShowText(" ");
 	ClearIcons();
 }
 
