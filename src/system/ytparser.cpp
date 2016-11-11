@@ -110,7 +110,10 @@ cYTFeedParser::cYTFeedParser()
 	concurrent_downloads = 2;
 	curl_handle = curl_easy_init();
 #ifdef YOUTUBE_DEV_ID
-	key = YOUTUBE_DEV_ID;
+	if (g_settings.youtube_dev_id == "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" || g_settings.youtube_dev_id.empty())
+		key = YOUTUBE_DEV_ID;
+	else
+		key = g_settings.youtube_dev_id;
 #else
 	key = g_settings.youtube_dev_id;
 #endif

@@ -13,6 +13,12 @@ AC_PROG_CXX
 AC_DISABLE_STATIC
 AM_PROG_LIBTOOL
 
+# Get youtube_dev_id
+AH_TEMPLATE(YOUTUBE_DEV_ID, [Define YOUTUBE_DEV_ID for using youtube api3])
+if youtube_dev_id=`cat ${srcdir}/youtube_dev_id.txt`; then
+    AC_DEFINE_UNQUOTED(YOUTUBE_DEV_ID, ["$youtube_dev_id"])
+fi
+ 
 # Add build information to config.h
 # ---------------------------------
 

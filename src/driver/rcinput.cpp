@@ -92,6 +92,7 @@ const char * const RC_EVENT_DEVICE[NUMBER_OF_EVENT_DEVICES] = {"/dev/input/nevis
 #endif
 #if HAVE_DUCKBOX_HARDWARE
 const char * const RC_EVENT_DEVICE[NUMBER_OF_EVENT_DEVICES] = {"/dev/input/nevis_ir", "/dev/input/nevis_fp"};
+bool devErrorReported = false;  //to report device opening errors once and not spam logs
 #else
 const char * const RC_EVENT_DEVICE[NUMBER_OF_EVENT_DEVICES] = {"/dev/input/event0"};
 #endif
@@ -196,9 +197,11 @@ void CRCInput::open(int dev)
 				continue;
 		}
 		if ((fd_rc[i] = ::open(RC_EVENT_DEVICE[i], O_RDWR|O_NONBLOCK|O_CLOEXEC)) == -1)
-			perror(RC_EVENT_DEVICE[i]);
-		printf("CRCInput::open: %s fd %d\n", RC_EVENT_DEVICE[i], fd_rc[i]);
+			if (!devErrorReported)
+				perror(RC_EVENT_DEVICE[i]);
+		//printf("CRCInput::open: %s fd %d\n", RC_EVENT_DEVICE[i], fd_rc[i]);
 	}
+	devErrorReported = true;
 
 	//+++++++++++++++++++++++++++++++++++++++
 #ifdef KEYBOARD_INSTEAD_OF_REMOTE_CONTROL

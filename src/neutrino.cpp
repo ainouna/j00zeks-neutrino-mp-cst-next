@@ -986,11 +986,7 @@ int CNeutrinoApp::loadSetup(const char * fname)
 
 	//Movie-Player
 	g_settings.movieplayer_repeat_on = configfile.getInt32("movieplayer_repeat_on", CMoviePlayerGui::REPEAT_OFF);
-#ifdef YOUTUBE_DEV_ID
-	g_settings.youtube_dev_id = YOUTUBE_DEV_ID;
-#else
 	g_settings.youtube_dev_id = configfile.getString("youtube_dev_id","XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-#endif
 	g_settings.youtube_enabled = configfile.getInt32("youtube_enabled", 1);
 	g_settings.youtube_enabled = check_youtube_dev_id();
 #ifdef TMDB_API_KEY
