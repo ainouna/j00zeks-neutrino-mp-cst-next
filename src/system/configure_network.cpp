@@ -217,7 +217,11 @@ void CNetworkConfig::commitConfig(void)
 
 void CNetworkConfig::startNetwork(void)
 {
+#if 0
 	std::string cmd = "/sbin/ifup " + ifname;
+#else
+	std::string cmd = "/etc/init.d/network start";
+#endif
 #ifdef DEBUG
 	printf("CNetworkConfig::startNetwork: %s\n", cmd.c_str());
 #endif
@@ -231,7 +235,11 @@ void CNetworkConfig::startNetwork(void)
 
 void CNetworkConfig::stopNetwork(void)
 {
+#if 0
 	std::string cmd = "/sbin/ifdown " + ifname;
+#else
+	std::string cmd = "/etc/init.d/network stop";
+#endif
 #ifdef DEBUG
 	printf("CNetworkConfig::stopNetwork: %s\n", cmd.c_str());
 #endif

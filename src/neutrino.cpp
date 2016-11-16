@@ -4271,7 +4271,9 @@ void CNeutrinoApp::standbyMode( bool bOnOff, bool fromDeepStandby )
 #ifdef ENABLE_GRAPHLCD
 		nGLCD::StandbyMode(true);
 #endif
-		if (g_settings.language == "polski")
+		if (j00zekVFDsize == 4)
+			CVFD::getInstance()->ShowText("off");
+		else if (g_settings.language == "polski")
 			CVFD::getInstance()->ShowText("Czuwanie...");
 		else
 			CVFD::getInstance()->ShowText("standby...");
@@ -4355,7 +4357,9 @@ void CNeutrinoApp::standbyMode( bool bOnOff, bool fromDeepStandby )
 		// Active standby off
 		powerManager->SetStandby(false, false);
 		CVFD::getInstance()->setMode(CVFD::MODE_TVRADIO);
-		if (g_settings.language == "polski")
+		if (j00zekVFDsize == 4)
+			CVFD::getInstance()->ShowText("on");
+		else if (g_settings.language == "polski")
 			CVFD::getInstance()->ShowText("Pobudka...");
 		else
 			CVFD::getInstance()->ShowText("resume");
