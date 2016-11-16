@@ -910,7 +910,6 @@ int CMovieBrowser::exec(CMenuTarget* parent, const std::string & actionKey)
 			}
 		}
 	}
-
 	return returnval;
 }
 
@@ -1403,6 +1402,8 @@ TRACE("[mb]->%s:%d m_movieCover->getHeight(): %d\n", __func__, __LINE__, m_movie
 			m_movieCover->setWidth(0); // force recalculation
 TRACE("[mb]->%s:%d m_movieCover->getWidth(): %d\n", __func__, __LINE__, m_movieCover->getWidth());
 			m_movieCover->setHeight(cover_h, true);
+			if (m_movieCover->getWidth() > movieCoverBox.iWidth/3)
+				m_movieCover->setWidth(movieCoverBox.iWidth/3, true); // use maximal one third of box width
 
 			m_movieCover->setXPos(movieCoverBox.iX + movieCoverBox.iWidth - m_movieCover->getWidth() - 2*OFFSET_INNER_MID - OFFSET_SHADOW);
 			m_movieCover->setYPos(movieCoverBox.iY + (movieCoverBox.iHeight - m_movieCover->getHeight())/2);
@@ -1438,8 +1439,6 @@ void CMovieBrowser::hideMovieCover(void)
 void CMovieBrowser::refreshMovieInfo(void)
 {
 	TRACE("[mb]->%s m_vMovieInfo.size %d\n", __func__, m_vMovieInfo.size());
-
-	hideDetailsLine();
 
 	// clear m_pcInfo1 text before new init
 	m_pcInfo1->clear();
@@ -1501,18 +1500,12 @@ void CMovieBrowser::refreshMovieInfo(void)
 
 void CMovieBrowser::hideDetailsLine()
 {
-	refreshDetailsLine(-1);
+	if (m_detailsLine)
+		m_detailsLine->hide();
 }
 
 void CMovieBrowser::refreshDetailsLine(int pos)
 {
-	if (m_detailsLine)
-	{
-		m_detailsLine->kill();
-		delete m_detailsLine;
-		m_detailsLine = NULL;
-	}
-
 	if (pos >= 0)
 	{
 		int fheight = g_Font[SNeutrinoSettings::FONT_TYPE_MOVIEBROWSER_LIST]->getHeight();
@@ -1524,8 +1517,10 @@ void CMovieBrowser::refreshDetailsLine(int pos)
 		int ypos2 = m_cBoxFrameInfo1.iY + (m_cBoxFrameInfo1.iHeight/2);
 
 		if (m_detailsLine == NULL)
-			m_detailsLine = new CComponentsDetailLine(xpos, ypos1, ypos2, fheight/2, m_cBoxFrameInfo1.iHeight-2*RADIUS_LARGE);
-		m_detailsLine->paint(false);
+			m_detailsLine = new CComponentsDetailLine();
+
+		m_detailsLine->setDimensionsAll(xpos, ypos1, ypos2, fheight/2, m_cBoxFrameInfo1.iHeight-2*RADIUS_LARGE);
+		m_detailsLine->paint(true);
 	}
 }
 
@@ -2014,18 +2009,58 @@ bool CMovieBrowser::onButtonPressMainFrame(neutrino_msg_t msg)
 		if (m_settings.gui != MB_GUI_LAST_PLAY && m_settings.gui != MB_GUI_LAST_RECORD)
 		{
 			// sorting is not avialable for last play and record
-			do
-			{
-				if (m_settings.sorting.item + 1 >= MB_INFO_MAX_NUMBER)
-					m_settings.sorting.item = (MB_INFO_ITEM)0;
-				else
-					m_settings.sorting.item = (MB_INFO_ITEM)(m_settings.sorting.item + 1);
-			} while (sortBy[m_settings.sorting.item] == NULL);
 
-			TRACE("[mb]->new sorting %d,%s\n",m_settings.sorting.item,g_Locale->getText(m_localizedItemName[m_settings.sorting.item]));
-			refreshBrowserList();
-			refreshMovieInfo();
-			refreshFoot();
+			int directkey = 1;
+			int selected = -1;
+			CMenuSelectorTarget * selector = new CMenuSelectorTarget(&selected);
+
+			CMenuWidget m(LOCALE_MOVIEBROWSER_FOOT_SORT, NEUTRINO_ICON_SETTINGS);
+			m.addIntroItems();
+
+			// add PREVPLAYDATE/RECORDDATE sort buttons to footer
+			m.addKey(CRCInput::RC_red, selector, to_string(MB_INFO_PREVPLAYDATE).c_str());
+			m.addKey(CRCInput::RC_green, selector, to_string(MB_INFO_RECORDDATE).c_str());
+
+			button_label footerButtons[] = {
+				{ NEUTRINO_ICON_BUTTON_RED,	LOCALE_MOVIEBROWSER_INFO_PREVPLAYDATE},
+				{ NEUTRINO_ICON_BUTTON_GREEN,	LOCALE_MOVIEBROWSER_INFO_RECORDDATE}
+			};
+			int footerButtonsCount = sizeof(footerButtons) / sizeof(button_label);
+
+			m.setFooter(footerButtons, footerButtonsCount);
+
+			// just show sorting options for displayed rows; sorted by rows
+			for (int row = 0; row < MB_MAX_ROWS && row < m_settings.browserRowNr; row++)
+			{
+				for (unsigned int i = 0; i < MB_INFO_MAX_NUMBER; i++)
+				{
+					if (sortBy[i] == NULL)
+						continue;
+
+					// already added to footer
+					if (i == MB_INFO_PREVPLAYDATE || i == MB_INFO_RECORDDATE)
+						continue;
+
+					if (m_settings.browserRowItem[row] == i)
+						m.addItem(new CMenuForwarder(g_Locale->getText(m_localizedItemName[i]), true, NULL, selector, to_string(i).c_str(), CRCInput::convertDigitToKey(directkey++)));
+				}
+			}
+
+			m.enableSaveScreen(true);
+			m.exec(NULL, "");
+
+			delete selector;
+
+			if (selected >= 0)
+			{
+				m_settings.sorting.item = (MB_INFO_ITEM) selected;
+
+				TRACE("[mb]->new sorting %d, %s\n", m_settings.sorting.item, g_Locale->getText(m_localizedItemName[m_settings.sorting.item]));
+
+				refreshBrowserList();
+				refreshMovieInfo();
+				refreshFoot();
+			}
 		}
 	}
 	else if (msg == CRCInput::RC_spkr)
@@ -3400,14 +3435,17 @@ bool CMovieBrowser::showMenu(bool calledExternally)
 
 		if (reInitFrames) {
 #if 1
-			if (m_settings.browserAdditional && oldAdditional != m_settings.browserAdditional)
+			if (oldAdditional != m_settings.browserAdditional)
 			{
 				/*
 				   Bad 'hack' to force a smaller m_pcInfo1 box.
 				   This can be reconfigured by user later.
 				   It's just to align view to channellist's view.
 				*/
-				m_settings.browserFrameHeight = 75;
+				if (m_settings.browserAdditional)
+					m_settings.browserFrameHeight = 75;
+				else
+					m_settings.browserFrameHeight = 65;
 			}
 #endif
 			initFrames();
@@ -3685,6 +3723,8 @@ bool CMovieBrowser::getMovieInfoItem(MI_MOVIE_INFO& movie_info, MB_INFO_ITEM ite
 			}
 			break;
 		case MB_INFO_SPACER: 				// 		= 21,
+			*item_string="";
+			break;
 		case MB_INFO_MAX_NUMBER: 			//		= 22
 		default:
 			*item_string="";

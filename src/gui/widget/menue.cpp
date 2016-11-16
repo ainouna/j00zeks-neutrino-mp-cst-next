@@ -1228,7 +1228,6 @@ void CMenuWidget::initSelectable()
 
 void CMenuWidget::paint()
 {
-	OnBeforePaint();
 	if (header){
 		if ((bool)header->getCornerRadius() != (bool)g_settings.rounded_corners) //ensure reset if corner mode was changed
 			ResetModules();
@@ -1238,6 +1237,8 @@ void CMenuWidget::paint()
 		CInfoClock::getInstance()->disableInfoClock();
 	calcSize();
 	CVFD::getInstance()->setMode(CVFD::MODE_MENU_UTF8 /*, nameString.c_str()*/);
+
+	OnBeforePaint();
 
 	// paint head
 	if (header == NULL){
@@ -1430,7 +1431,7 @@ void CMenuWidget::paintHint(int pos)
 		if (details_line)
 			details_line->hide();
 		/* clear info box */
-		if ((info_box) && (pos < 0))
+		if ((info_box) && ((pos < 0) || savescreen))
 			savescreen ? info_box->hide() : info_box->kill();
 		if (info_box)
 			hint_painted = info_box->isPainted();
