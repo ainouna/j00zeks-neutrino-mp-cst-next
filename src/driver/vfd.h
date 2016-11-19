@@ -168,6 +168,7 @@ class CVFD
 #if HAVE_DUCKBOX_HARDWARE
 		bool hasConfigOption(char *str);
 		bool supports_brightness;
+		void repaintIcons();
 		void UpdateIcons();
 		void ShowScrollText(char * str);
 		static void* ThreadScrollText(void * arg);
