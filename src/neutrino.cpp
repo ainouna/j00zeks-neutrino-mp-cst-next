@@ -748,7 +748,7 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	g_settings.recording_zap_on_announce       = configfile.getBool("recording_zap_on_announce"      , false);
 	g_settings.shutdown_timer_record_type      = configfile.getBool("shutdown_timer_record_type"      , false);
 
-	g_settings.recording_stream_vtxt_pid       = configfile.getBool("recordingmenu.stream_vtxt_pid"      , true);
+	g_settings.recording_stream_vtxt_pid       = configfile.getBool("recordingmenu.stream_vtxt_pid"      , false);
 	g_settings.recording_stream_subtitle_pids  = configfile.getBool("recordingmenu.stream_subtitle_pids", true);
 	g_settings.recording_stream_pmt_pid        = configfile.getBool("recordingmenu.stream_pmt_pid"      , false);
 	g_settings.recording_filename_template     = configfile.getString("recordingmenu.filename_template" , "%C_%T_%d_%t");

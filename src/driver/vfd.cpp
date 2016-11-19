@@ -243,11 +243,15 @@ void SetIcon(int icon, bool status)
 static void ShowNormalText(char * str, bool fromScrollThread = false)
 {
 	//CVFD:count_down(DEBUG_DEBUG,"j00zek>%s:%s >>>\n", "CVFD::", __func__);
+	int displayDotOnLED = 0;
+	
 	if (j00zekVFDsize == 0)
 	{
 		j00zekDBG(J00ZEK_DBG,"[CVFD] ShowNormalText:j00zekVFDsize=0 exiting\n");
 		return;
-	}
+	} else if (j00zekVFDsize == 4 && str[2] == 0x2E)
+		displayDotOnLED = 1;
+	
 	if (blocked)
 	{
 		j00zekDBG(J00ZEK_DBG,"[CVFD] - blocked\n");
@@ -266,7 +270,7 @@ static void ShowNormalText(char * str, bool fromScrollThread = false)
 			vfd_scrollText = 0;
 		}
 	}
-	if ((strlen(str) > j00zekVFDsize && !fromScrollThread) && (g_settings.lcd_vfd_scroll >= 1))
+	if ((strlen(str) > (j00zekVFDsize + displayDotOnLED) && !fromScrollThread) && (g_settings.lcd_vfd_scroll >= 1))
 	{
 		j00zekDBG(J00ZEK_DBG,"if ((strlen(str) > j00zekVFDsize && !fromScrollThread) && (g_settings.lcd_vfd_scroll >= 1))\n");
 		CVFD::getInstance()->ShowScrollText(str);
@@ -282,14 +286,14 @@ static void ShowNormalText(char * str, bool fromScrollThread = false)
 		if ((strlen(str) % 2) == 1 && j00zekVFDsize > 8) // do not center on small displays
 			data.length = j00zekVFDsize-1;
 		else
-			data.length = j00zekVFDsize;
+			data.length = j00zekVFDsize + displayDotOnLED;
 	}
 	else
 	{
 		j00zekDBG(J00ZEK_DBG,"if (!fromScrollThread)..else\n");
-		memcpy ( data.data, str, j00zekVFDsize);
+		memcpy ( data.data, str, j00zekVFDsize + displayDotOnLED);
 		data.start = 0;
-		data.length = j00zekVFDsize;
+		data.length = j00zekVFDsize + displayDotOnLED;
 	}
 	write_to_vfd(VFDDISPLAYCHARS, &data);
 	return;
@@ -581,37 +585,54 @@ void CVFD::showTime(bool force)
 			{
 				hour = t->tm_hour;
 				minute = t->tm_min;
-				if (g_settings.lcd_vfd_time_format == 1){ //"09:22"
-					strftime(timestr, 6, "%H:%M", t);
-				} else if (g_settings.lcd_vfd_time_format == 2){ //" 9:22"
-					strftime(timestr, 6, "%H:%M", t);
-					if (timestr[0] == 0x30) timestr[0] = 0x20;
-				} else if (g_settings.lcd_vfd_time_format == 3){ //" 9.22"
-					strftime(timestr, 6, "%H.%M", t);
-					if (timestr[0] == 0x30) timestr[0] = 0x20;
-				} else if (g_settings.lcd_vfd_time_format == 4){ //"0922"
-					strftime(timestr, 5, "%H%M", t);
-				} else if (g_settings.lcd_vfd_time_format == 5){ //"09:22 31-01-2016"
-					strftime(timestr, 17, "%H:%M %d-%m-%Y", t);
+				if (j00zekVFDsize == 4)
+				{
+					if (g_settings.lcd_vfd_time_format == 4) //"0922"
+						strftime(timestr, 5, "%H%M", t);
+					else {
+						strftime(timestr, 6, "%H.%M", t);
+						if (timestr[0] == 0x30) timestr[0] = 0x20;
+					}
+				} else if (j00zekVFDsize > 4)
+				{
+					if (g_settings.lcd_vfd_time_format == 1)  //"09:22"
+						strftime(timestr, 6, "%H:%M", t);
+					else if (g_settings.lcd_vfd_time_format == 2) //" 9:22"
+					{
+						strftime(timestr, 6, "%H:%M", t);
+						if (timestr[0] == 0x30) timestr[0] = 0x20;
+					} else if (g_settings.lcd_vfd_time_format == 3) //" 9.22"
+					{
+						strftime(timestr, 6, "%H.%M", t);
+						if (timestr[0] == 0x30) timestr[0] = 0x20;
+					} else if (g_settings.lcd_vfd_time_format == 4) //"0922"
+						strftime(timestr, 5, "%H%M", t);
+					else if (g_settings.lcd_vfd_time_format == 5) //"09:22 31-01-2016"
+						strftime(timestr, 17, "%H:%M %d-%m-%Y", t);
 				}
 				ShowText(timestr);
 			} else if( g_settings.lcd_vfd_time_blinking_dot && (t->tm_sec % 2) )
 			{
-				if (g_settings.lcd_vfd_time_format == 1){ //"09:22"
-					strftime(timestr, 6, "%H.%M", t);
-				} else if (g_settings.lcd_vfd_time_format == 2){ //" 9:22"
-					strftime(timestr, 6, "%H.%M", t);
-					if (timestr[0] == 0x30) timestr[0] = 0x20;
-				} else if (g_settings.lcd_vfd_time_format == 3 && j00zekVFDsize > 4){ //on vfd longer then 4 chars we write space
-					strftime(timestr, 6, "%H %M", t);
-					if (timestr[0] == 0x30) timestr[0] = 0x20;
-				} else if (g_settings.lcd_vfd_time_format == 3 && j00zekVFDsize == 4){ //on 4 chars vfd nothing written between
-					strftime(timestr, 6, "%H%M", t);
-					if (timestr[0] == 0x30) timestr[0] = 0x20;
-				} else if (g_settings.lcd_vfd_time_format == 4){ //"0922"
+				if (j00zekVFDsize == 4)
+				{
 					strftime(timestr, 5, "%H%M", t);
-				} else if (g_settings.lcd_vfd_time_format == 5){ //"09:22 31-01-2016"
-					strftime(timestr, 17, "%H.%M %d-%m-%Y", t);
+					if (g_settings.lcd_vfd_time_format != 4 && timestr[0] == 0x30) //"0922"
+						timestr[0] = 0x20;
+				} else if (j00zekVFDsize > 4)
+				{
+					if (g_settings.lcd_vfd_time_format == 1){ //"09:22"
+						strftime(timestr, 6, "%H.%M", t);
+					} else if (g_settings.lcd_vfd_time_format == 2){ //" 9:22"
+						strftime(timestr, 6, "%H.%M", t);
+						if (timestr[0] == 0x30) timestr[0] = 0x20;
+					} else if (g_settings.lcd_vfd_time_format == 3){
+						strftime(timestr, 6, "%H %M", t);
+						if (timestr[0] == 0x30) timestr[0] = 0x20;
+					} else if (g_settings.lcd_vfd_time_format == 4){ //"0922"
+						strftime(timestr, 5, "%H%M", t);
+					} else if (g_settings.lcd_vfd_time_format == 5){ //"09:22 31-01-2016"
+						strftime(timestr, 17, "%H.%M %d-%m-%Y", t);
+					}
 				}
 				ShowText(timestr);
 			}
