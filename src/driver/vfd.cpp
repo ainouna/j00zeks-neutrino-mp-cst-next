@@ -369,11 +369,35 @@ void* CVFD::ThreadScrollText(void * arg)
 
 CVFD::CVFD()
 {
+#ifdef VFD_UPDATE
+        m_fileList = NULL;
+        m_fileListPos = 0;
+        m_fileListHeader = "";
+        m_infoBoxText = "";
+        m_infoBoxAutoNewline = 0;
+        m_progressShowEscape = 0;
+        m_progressHeaderGlobal = "";
+        m_progressHeaderLocal = "";
+        m_progressGlobal = 0;
+        m_progressLocal = 0;
+#endif // VFD_UPDATE
+
 	has_lcd = true; //trigger for vfd setup
+	has_led_segment = false;
+#if !HAVE_DUCKBOX_HARDWARE
+	fd = open("/dev/display", O_RDONLY);
+	if(fd < 0) {
+		perror("/dev/display");
+		has_lcd = false;
+		has_led_segment = false;
+	}
+#else
 	if ((j00zekVFDsize == 0) || brightnessDivider <= 0)
 		supports_brightness = false;
 	else
 		supports_brightness = true;
+	fd = 1;
+#endif
 
 	if (j00zekVFDsize <= 4)
 		support_text = false;
