@@ -101,7 +101,7 @@ void j00zek_get_vfd_config()
 	}
 	
 	j00zekDBG(J00ZEK_DBG,"[j00zek_get_vfd_config] kBoxType=%s, VFDsize=%d",j00zekBoxType, j00zekVFDsize);
-	if  (strstr(j00zekBoxType, "SPARK7162")) {
+	if  (!strncasecmp(j00zekBoxType, "SPARK7162", 9)) {
 		IconsNum = 44;
 		brightnessDivider = 2;
 		isSpark7162 = true;
@@ -110,39 +110,39 @@ void j00zek_get_vfd_config()
 	}
 	/*else if  (strstr(j00zekBoxType, "ArivaLink200"))
 		nothing to set for Ariva */
-	else if  (strstr(j00zekBoxType, "ESI88")) {
+	else if  (!strncasecmp(j00zekBoxType, "ESI88", 5)) {
 		IconsNum = 4;
 		brightnessDivider = 3;
 		RecIconID = 1;
 		PowerOnIconID = 2;
 	}
-	else if  (strstr(j00zekBoxType, "UHD88")) {
+	else if  (!strncasecmp(j00zekBoxType, "UHD88", 5)) {
 		IconsNum = 4;
 		brightnessDivider = 3;
 		RecIconID = 1;
 		PowerOnIconID = 2;
 	}
-	else if  (strstr(j00zekBoxType, "ADB5800") && j00zekVFDsize == 16) {
+	else if  (!strncasecmp(j00zekBoxType, "ADB5800", 7) && j00zekVFDsize == 16) {
 		IconsNum = 5;
 		brightnessDivider = 2;
 		StandbyIconID = 1;
 		RecIconID = 3;
 		PowerOnIconID = 2;
 	}
-	else if  (strstr(j00zekBoxType, "ADB5800") && j00zekVFDsize != 16) {
+	else if  (!strncasecmp(j00zekBoxType, "ADB5800", 7) && j00zekVFDsize != 16) {
 		IconsNum = 5;
 		brightnessDivider = 2;
 		StandbyIconID = 1;
 		RecIconID = 3;
 		PowerOnIconID = 2;
 	}
-	else if  (strstr(j00zekBoxType, "ADB28")) {
+	else if  (!strncasecmp(j00zekBoxType, "ADB28", 5)) {
 		IconsNum = 2;
 		StandbyIconID = 2;
 		RecIconID = 2;
 		PowerOnIconID = 1;
 	}
-	else if  (strstr(j00zekBoxType, "HD101")) {
+	else if  (!strncasecmp(j00zekBoxType, "HD101", 5)) {
 		IconsNum = 12;
 		StandbyIconID = 11;
 		RecIconID = 2;
