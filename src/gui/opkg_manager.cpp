@@ -66,7 +66,11 @@
 
 #define OPKG_TMP_DIR "/tmp/.opkg"
 #define OPKG_TEST_DIR OPKG_TMP_DIR "/test"
+#if 0
 #define OPKG_CL_CONFIG_OPTIONS " -V2 --tmp-dir=/tmp --cache=" OPKG_TMP_DIR
+#else
+#define OPKG_CL_CONFIG_OPTIONS " -V1 --tmp-dir=/tmp --cache=" OPKG_TMP_DIR
+#endif
 
 #define OPKG_BAD_PATTERN_LIST_FILE CONFIGDIR "/bad_package_pattern.list"
 #define OPKG_CONFIG_FILE "/etc/opkg/opkg.conf"
