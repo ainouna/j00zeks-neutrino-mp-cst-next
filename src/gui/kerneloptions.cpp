@@ -72,13 +72,32 @@ void CKernelOptions::loadModule(int i)
 			my_system(2, "insmod", mp);
 		} else
 			system(("insmod /lib/modules/" + modules[i].moduleList[j].first + ".ko " + modules[i].moduleList.back().second).c_str());
+#if 0
+	for (unsigned int j = 0; j < modules[i].moduleList.size(); j++) {
+		if (modules[i].moduleList[j].second.empty())
+		{
+			//printf(" %s\n", ("command: insmod " + modules[i].moduleList[j].first).c_str());
+			my_system(2, "insmod", modules[i].moduleList[j].first.c_str());
+		}
+		else
+		{
+			//printf(" %s\n", ("command: insmod " + modules[i].moduleList[j].first + " " + modules[i].moduleList[j].second).c_str());
+			system(("insmod " + modules[i].moduleList[j].first + " " + modules[i].moduleList[j].second).c_str());
+		}
+#endif
 	}
 }
 
 void CKernelOptions::unloadModule(int i)
 {
+#if 0
 	dprintf(DEBUG_INFO,"CKernelOptions::unloadModule(int i=%d)", i);
 	my_system(2, "rmmod", modules[i].moduleList.back().first.c_str());
+#endif
+	for (unsigned int j = modules[i].moduleList.size(); j > 0; j--) {
+		dprintf(DEBUG_INFO,"CKernelOptions::unloadModule '%s' (int i=%d, j=%d)", modules[i].moduleList[j - 1].first.c_str(), i, j);
+		my_system(2, "rmmod", modules[i].moduleList[j - 1].first.c_str());
+	}
 }
 
 void CKernelOptions::updateStatus(void)
@@ -146,7 +165,7 @@ int CKernelOptions::exec(CMenuTarget * parent, const std::string & actionKey)
 	if (parent)
 		parent->hide();
 
-	Settings();
+	res = Settings();
 
 	return res;
 }
@@ -314,9 +333,9 @@ bool CKernelOptions::changeNotify(const neutrino_locale_t /*OptionName */ , void
 	return true;
 }
 
-void CKernelOptions::Settings()
+int CKernelOptions::Settings()
 {
-	CMenuWidget *menu = new CMenuWidget(LOCALE_MAINSETTINGS_HEAD, NEUTRINO_ICON_SETTINGS);
+	CMenuWidget *menu = new CMenuWidget(LOCALE_MAINSETTINGS_HEAD, NEUTRINO_ICON_SETTINGS, width);
 	menu->addKey(CRCInput::RC_red, this, "reset");
 	menu->addKey(CRCInput::RC_green, this, "apply");
 	menu->setFooter(KernelOptionsButtons, KernelOptionsButtonCount);
@@ -332,7 +351,8 @@ void CKernelOptions::Settings()
 
 	updateStatus();
 
-	menu->exec(NULL, "");
-	menu->hide();
+	int ret = menu->exec(NULL, "");
+	//menu->hide();
 	delete menu;
+	return ret;
 }
