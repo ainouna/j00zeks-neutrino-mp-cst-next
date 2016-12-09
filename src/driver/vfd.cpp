@@ -251,6 +251,7 @@ static void ShowNormalText(char * str, bool fromScrollThread = false)
 		return;
 	} else if (j00zekVFDsize == 4 && str[2] == 0x2E)
 		displayDotOnLED = 1;
+	j00zekDBG(J00ZEK_DBG,"displayDotOnLED=%i\n",displayDotOnLED);
 	
 	if (blocked)
 	{
@@ -281,7 +282,7 @@ static void ShowNormalText(char * str, bool fromScrollThread = false)
 	if (!fromScrollThread)
 	{
 		j00zekDBG(J00ZEK_DBG,"if (!fromScrollThread)\n");
-		memcpy (data.data, str, j00zekVFDsize);
+		memcpy (data.data, str, j00zekVFDsize + displayDotOnLED);
 		data.start = 0;
 		if ((strlen(str) % 2) == 1 && j00zekVFDsize > 8) // do not center on small displays
 			data.length = j00zekVFDsize-1;
@@ -295,6 +296,7 @@ static void ShowNormalText(char * str, bool fromScrollThread = false)
 		data.start = 0;
 		data.length = j00zekVFDsize + displayDotOnLED;
 	}
+	j00zekDBG(J00ZEK_DBG,"data.data='%s', data.length=%i\n",data.data,data.length);
 	write_to_vfd(VFDDISPLAYCHARS, &data);
 	return;
 }
