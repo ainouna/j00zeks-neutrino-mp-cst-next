@@ -2324,8 +2324,9 @@ TIMER_START();
 	snprintf(start_text, sizeof(start_text), g_Locale->getText(LOCALE_NEUTRINO_STARTING), PACKAGE_NAME, PACKAGE_VERSION );
 	start_text[99] = '\0';
 	CHintBox * hintBox = new CHintBox(LOCALE_MESSAGEBOX_INFO, start_text);
+#if 0
 	hintBox->paint();
-
+#endif
 	CVFD::getInstance()->init(neutrinoFonts->fontDescr.filename.c_str(), neutrinoFonts->fontDescr.name.c_str());
 	CVFD::getInstance()->Clear();
 	if (j00zekVFDsize == 4)
