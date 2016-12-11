@@ -148,6 +148,12 @@ void j00zek_get_vfd_config()
 		RecIconID = 2;
 		PowerOnIconID = 12;
 	}
+	else if  (!strncasecmp(j00zekBoxType, "DSI87", 5)) {
+		IconsNum = 2;
+		StandbyIconID = 1;
+		RecIconID = 1;
+		PowerOnIconID = 2;
+	}
 		
 	j00zekDBG(J00ZEK_DBG,",IconsNum=%d,brightnessDivider=%d,isSpark7162=%d\n", IconsNum, brightnessDivider, isSpark7162);
 	return;
