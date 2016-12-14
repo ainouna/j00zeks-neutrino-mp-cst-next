@@ -3855,6 +3855,11 @@ int CNeutrinoApp::handleMsg(const neutrino_msg_t _msg, neutrino_msg_data_t data)
 		CRCLock::getInstance()->exec(NULL, CRCLock::NO_USER_INPUT);
 		return messages_return::handled;
 	}
+	else if (msg == NeutrinoMessages::LOCK_RC_EXTERN || msg == NeutrinoMessages::UNLOCK_RC_EXTERN)
+	{
+		printf("CNeutrinoApp::handleMsg: RC is %s now\n", msg == NeutrinoMessages::LOCK_RC_EXTERN ? "LOCKED" : "UNLOCKED");
+		return messages_return::handled;
+	}
 	else if( msg == NeutrinoMessages::CHANGEMODE ) {
 		printf("CNeutrinoApp::handleMsg: CHANGEMODE to %d rezap %d\n", (int)(data & mode_mask), (data & norezap) != norezap);
 		if((data & mode_mask)== mode_radio) {
@@ -3976,7 +3981,7 @@ void CNeutrinoApp::ExitRun(const bool /*write_si*/, int retcode)
 	if(CRecordManager::getInstance()->RecordingStatus() || cYTCache::getInstance()->isActive()) {
 		do_shutdown =
 			(ShowMsg(LOCALE_MESSAGEBOX_INFO, LOCALE_SHUTDOWN_RECORDING_QUERY, CMsgBox::mbrNo,
-					CMsgBox::mbYes | CMsgBox::mbNo, NULL, 450, 30, true) == CMsgBox::mbrYes);
+					CMsgBox::mbYes | CMsgBox::mbNo, NULL, 450, DEFAULT_TIMEOUT, true) == CMsgBox::mbrYes);
 	}
 
 	if(do_shutdown) {
@@ -4688,7 +4693,6 @@ int CNeutrinoApp::exec(CMenuTarget* parent, const std::string & actionKey)
 			saveSetup(NEUTRINO_SETTINGS_FILE);
 
 			/* this is an ugly mess :-( */
-			delete g_RCInput;
 			delete g_Sectionsd;
 			delete g_RemoteControl;
 			delete g_fontRenderer;
@@ -4698,6 +4702,8 @@ int CNeutrinoApp::exec(CMenuTarget* parent, const std::string & actionKey)
 
 			stop_daemons(true);
 			stop_video();
+			/* g_RCInput is used in stop_daemons if a web-tv channel is running */
+			delete g_RCInput;
 			/* g_Timerd, g_Zapit and CVFD are used in stop_daemons */
 			delete g_Timerd;
 			delete g_Zapit; //do we really need this?

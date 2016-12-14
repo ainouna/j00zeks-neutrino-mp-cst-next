@@ -538,26 +538,6 @@ void CChannelList::calcSize()
 	else
 		pig_height = 0;
 	infozone_height = height - theight - pig_height - footerHeight;
-
-	ChannelList_Rec = 0;
-	int icon_w, h;
-	int recmode_icon_max = 0;
-	frameBuffer->getIconSize(NEUTRINO_ICON_REC, &icon_w, &h);
-	recmode_icon_max = std::max(recmode_icon_max, icon_w);
-	frameBuffer->getIconSize(NEUTRINO_ICON_AUTO_SHIFT, &icon_w, &h);
-	recmode_icon_max = std::max(recmode_icon_max, icon_w);
-	frameBuffer->getIconSize(NEUTRINO_ICON_PIP, &icon_w, &h);
-	recmode_icon_max = std::max(recmode_icon_max, icon_w);
-
-	for (uint32_t i = 0; i < (*chanlist).size(); i++) {
-		if (CRecordManager::getInstance()->GetRecordMode((*chanlist)[i]->getChannelID()) ||
-			(*chanlist)[i]->getChannelID() == CZapit::getInstance()->GetPipChannelID()) {
-			ChannelList_Rec = recmode_icon_max;
-			break;
-		}
-	}
-	if (ChannelList_Rec > 0)
-		ChannelList_Rec += 8;
 }
 
 bool CChannelList::updateSelection(int newpos)
@@ -1586,24 +1566,23 @@ void CChannelList::paintDetails(int index)
 	int ypos   = y + height + OFFSET_INTER;
 	int ypos_a = ypos + OFFSET_INNER_SMALL;
 
-	CChannelEvent *p_event = NULL;
-
-	//colored_events init
-	bool colored_event_C = (g_settings.theme.colored_events_channellist == 1);
-	bool colored_event_N = (g_settings.theme.colored_events_channellist == 2);
-
 	frameBuffer->paintBoxRel(x, ypos, full_width, info_height, COL_MENUCONTENTDARK_PLUS_0, RADIUS_LARGE);
 	frameBuffer->paintBoxFrame(x, ypos, full_width, info_height, 2, COL_FRAME_PLUS_0, RADIUS_LARGE);
 
 	if ((*chanlist).empty())
 		return;
 
+	//colored_events init
+	bool colored_event_C = (g_settings.theme.colored_events_channellist == 1);
+	bool colored_event_N = (g_settings.theme.colored_events_channellist == 2);
+
+	CChannelEvent *p_event = NULL;
 	if (displayNext)
 		p_event = &(*chanlist)[index]->nextEvent;
 	else
 		p_event = &(*chanlist)[index]->currentEvent;
 
-	if (/* !IS_WEBTV((*chanlist)[index]->getChannelID()) && */ !p_event->description.empty()) {
+	if (/* !IS_WEBTV((*chanlist)[index]->getChannelID()) && */ p_event && !p_event->description.empty()) {
 		char cNoch[50] = {0}; // UTF-8
 		char cSeit[50] = {0}; // UTF-8
 
@@ -1687,7 +1666,7 @@ void CChannelList::paintDetails(int index)
 	else if( !displayNext && g_settings.channellist_foot == 1) { // next Event
 
 		CSectionsdClient::CurrentNextInfo CurrentNext;
-		CEitManager::getInstance()->getCurrentNextServiceKey((*chanlist)[index]->getChannelID(), CurrentNext);
+		CEitManager::getInstance()->getCurrentNextServiceKey((*chanlist)[index]->getEpgID(), CurrentNext);
 		if (!CurrentNext.next_name.empty()) {
 			char buf[128] = {0};
 			char cFrom[50] = {0}; // UTF-8
@@ -1977,13 +1956,13 @@ void CChannelList::paintItem(int pos, const bool firstpaint)
 		char nameAndDescription[255];
 		char tmp[10];
 		CZapitChannel* chan = (*chanlist)[curr];
-		int prg_offset=0;
-		int title_offset=0;
+		int prg_offset = 0;
+		int title_offset = 0;
 		int rec_mode;
 		if(g_settings.channellist_progressbar_design != CProgressBar::PB_OFF)
 		{
 			prg_offset = g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_NUMBER]->getRenderWidth("00:00");
-			title_offset=6;
+			title_offset = OFFSET_INNER_SMALL;
 		}
 
 		snprintf(tmp, sizeof(tmp), "%d", this->historyMode ? pos : chan->number);
@@ -1998,59 +1977,115 @@ void CChannelList::paintItem(int pos, const bool firstpaint)
 		rec_mode = CRecordManager::getInstance()->GetRecordMode((*chanlist)[curr]->getChannelID());
 
 		//set recording icon
-		std::string rec_icon;
+		const char *record_icon = NULL;
 		if (rec_mode & CRecordManager::RECMODE_REC)
-			rec_icon = NEUTRINO_ICON_REC;
+			record_icon = NEUTRINO_ICON_REC;
 		else if (rec_mode & CRecordManager::RECMODE_TSHIFT)
-			rec_icon = NEUTRINO_ICON_AUTO_SHIFT;
+			record_icon = NEUTRINO_ICON_AUTO_SHIFT;
+
+		//set pip icon
+		const char *pip_icon = NULL;
 #ifdef ENABLE_PIP
-		else if ((*chanlist)[curr]->getChannelID() == CZapit::getInstance()->GetPipChannelID())
-			rec_icon = NEUTRINO_ICON_PIP;
+		if ((*chanlist)[curr]->getChannelID() == CZapit::getInstance()->GetPipChannelID())
+			pip_icon = NEUTRINO_ICON_PIP;
 #endif
-		//calculating icons
-		bool isWebTV = !chan->getUrl().empty();
-		const char *icon = isWebTV ? NEUTRINO_ICON_STREAMING : NEUTRINO_ICON_SCRAMBLED;
-		int  icon_x = (x+width-15-2) - RADIUS_LARGE/2;
-		int r_icon_w=0;  int s_icon_h=0; int s_icon_w=0; int h_icon_w=0;
-		frameBuffer->getIconSize(icon, &s_icon_w, &s_icon_h);
-		r_icon_w = ChannelList_Rec;
-		int r_icon_x = icon_x;
-/* j00zek we don't paint scrambled icons
-		//paint icon
-		if(chan->scrambled || isWebTV)
-			if (frameBuffer->paintIcon(icon, icon_x - s_icon_w, ypos, fheight))//ypos + (fheight - 16)/2);
-				r_icon_x = r_icon_x - s_icon_w;
-*/
-		//paint HD Icon
-		if(chan->isHD() && g_settings.channellist_hdicon) {
-			frameBuffer->getIconSize(NEUTRINO_ICON_RESOLUTION_HD, &h_icon_w, &s_icon_h);
-			if (frameBuffer->paintIcon(NEUTRINO_ICON_RESOLUTION_HD, icon_x - s_icon_w - h_icon_w, ypos, fheight))//ypos + (fheight - 16)/2);
-				r_icon_x = r_icon_x - h_icon_w;
+		//set HD icon
+		const char *hd_icon = NULL;
+		if(chan->isHD() && g_settings.channellist_hdicon)
+			hd_icon = NEUTRINO_ICON_RESOLUTION_HD;
+
+		//set webtv icon
+		const char *webtv_icon = NULL;
+		if (!chan->getUrl().empty())
+			webtv_icon = NEUTRINO_ICON_STREAMING;
+
+		//set scramble icon
+		const char *scramble_icon = NULL;
+// j00zek we don't paint scrambled icons
+#if 0
+		if (chan->scrambled)
+			scramble_icon = NEUTRINO_ICON_SCRAMBLED;
+#endif
+		//calculate and paint right status icons
+		int icon_w = 0;
+		int icon_h = 0;
+		int offset_right = OFFSET_INNER_MID;
+		int icon_x_right = x + width - 15 - offset_right;
+
+		if (hd_icon)
+		{
+			frameBuffer->getIconSize(hd_icon, &icon_w, &icon_h);
+			if (frameBuffer->paintIcon(hd_icon, icon_x_right - icon_w, ypos, fheight))
+			{
+				offset_right += icon_w + OFFSET_INNER_MID;
+				icon_x_right -= icon_w + OFFSET_INNER_MID;
+			}
 		}
 
- 		//paint recording icon
-		if (!rec_icon.empty())
-			frameBuffer->paintIcon(rec_icon, r_icon_x - r_icon_w, ypos, fheight);//ypos + (fheight - 16)/2);
+		if (scramble_icon)
+		{
+			frameBuffer->getIconSize(scramble_icon, &icon_w, &icon_h);
+			if (frameBuffer->paintIcon(scramble_icon, icon_x_right - icon_w, ypos, fheight))
+			{
+				offset_right += icon_w + OFFSET_INNER_MID;
+				icon_x_right -= icon_w + OFFSET_INNER_MID;
+			}
+		}
+
+		if (webtv_icon)
+		{
+			frameBuffer->getIconSize(webtv_icon, &icon_w, &icon_h);
+			if (frameBuffer->paintIcon(webtv_icon, icon_x_right - icon_w, ypos, fheight))
+			{
+				offset_right += icon_w + OFFSET_INNER_MID;
+				icon_x_right -= icon_w + OFFSET_INNER_MID;
+			}
+		}
+
+		if (pip_icon)
+		{
+			frameBuffer->getIconSize(pip_icon, &icon_w, &icon_h);
+			if (frameBuffer->paintIcon(pip_icon, icon_x_right - icon_w, ypos, fheight))
+			{
+				offset_right += icon_w + OFFSET_INNER_MID;
+				icon_x_right -= icon_w + OFFSET_INNER_MID;
+			}
+		}
+
+		if (record_icon)
+		{
+			frameBuffer->getIconSize(record_icon, &icon_w, &icon_h);
+			if (frameBuffer->paintIcon(record_icon, icon_x_right - icon_w, ypos, fheight))
+			{
+				offset_right += icon_w + OFFSET_INNER_MID;
+				icon_x_right -= icon_w + OFFSET_INNER_MID;
+			}
+		}
 
 		//paint buttons
 		if (paintbuttons)
 			paintButtonBar(is_available);
 
-		int icon_space = r_icon_w+s_icon_w+h_icon_w+8;
-
 		//channel numbers
-		int icon_w = 0, icon_h = 0;
-		if (curr == selected && move_state == beMoving) {
+		if (curr == selected && move_state == beMoving)
+		{
 			frameBuffer->getIconSize(NEUTRINO_ICON_BUTTON_YELLOW, &icon_w, &icon_h);
-			frameBuffer->paintIcon(NEUTRINO_ICON_BUTTON_YELLOW, x + 5 + numwidth - icon_w, ypos, fheight);
-		} else if (edit_state && chan->bLocked) {
+			frameBuffer->paintIcon(NEUTRINO_ICON_BUTTON_YELLOW, x + OFFSET_INNER_SMALL + numwidth - icon_w, ypos, fheight);
+		}
+		else if (edit_state && chan->bLocked)
+		{
 			frameBuffer->getIconSize(NEUTRINO_ICON_LOCK, &icon_w, &icon_h);
-			frameBuffer->paintIcon(NEUTRINO_ICON_LOCK, x + 5 + numwidth - icon_w, ypos, fheight);
-		} else if (g_settings.channellist_show_numbers) {
-			int numpos = x+5+numwidth- g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_NUMBER]->getRenderWidth(tmp);
-			g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_NUMBER]->RenderString(numpos,ypos+fheight, numwidth+5, tmp, color, fheight);
-		} else if (!edit_state)
+			frameBuffer->paintIcon(NEUTRINO_ICON_LOCK, x + OFFSET_INNER_SMALL + numwidth - icon_w, ypos, fheight);
+		}
+		else if (g_settings.channellist_show_numbers)
+		{
+			int numpos = x + OFFSET_INNER_SMALL + numwidth - g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_NUMBER]->getRenderWidth(tmp);
+			g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_NUMBER]->RenderString(numpos, ypos + fheight, numwidth + 5, tmp, color, fheight);
+		}
+		else if (!edit_state)
+		{
 			numwidth = -5;
+		}
 
 		int l=0;
 		if (this->historyMode)
@@ -2060,7 +2095,7 @@ void CChannelList::paintItem(int pos, const bool firstpaint)
 
 		int pb_space = prg_offset - title_offset;
 		int pb_height = g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_NUMBER]->getDigitHeight();
-		CProgressBar pb(x+5+numwidth + title_offset, ypos + (fheight-pb_height)/2, pb_space + 2, pb_height, COL_MENUCONTENT_PLUS_0);
+		CProgressBar pb(x + OFFSET_INNER_SMALL + numwidth + title_offset, ypos + (fheight-pb_height)/2, pb_space + 2, pb_height, COL_MENUCONTENT_PLUS_0);
 		pb.setType(CProgressBar::PB_TIMESCALE);
 		pb.setDesign(g_settings.channellist_progressbar_design);
 		pb.setCornerType(0);
@@ -2075,14 +2110,13 @@ void CChannelList::paintItem(int pos, const bool firstpaint)
 		pb.doPaintBg(false);
 		int pb_max = pb_space - 4;
 
-		if (!(p_event->description.empty()) && g_settings.j00zek_channellist_name_and_descr) {
+		if (!(p_event->description.empty()) && g_settings.j00zek_channellist_name_and_descr)
+		{
 			snprintf(nameAndDescription+l, sizeof(nameAndDescription)-l,g_settings.channellist_epgtext_align_right ? "  ":" - ");
 			unsigned int ch_name_len = g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->getRenderWidth(nameAndDescription);
 			unsigned int ch_desc_len = g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->getRenderWidth(p_event->description);
 
-			int max_desc_len = width - numwidth - prg_offset - ch_name_len - 15 - 20; // 15 = scrollbar, 20 = spaces
-			if (chan->scrambled || g_settings.channellist_epgtext_align_right)
-				max_desc_len -= icon_space+g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->getWidth(); /* do we need space for the lock/rec icon? */
+			int max_desc_len = width - numwidth - prg_offset - ch_name_len - 15 - 2*OFFSET_INNER_MID - offset_right; // 15 = scrollbar
 
 			if (max_desc_len < 0)
 				max_desc_len = 0;
@@ -2095,7 +2129,7 @@ void CChannelList::paintItem(int pos, const bool firstpaint)
 					struct tm *pStartZeit = localtime(&p_event->startTime);
 
 					snprintf(tmp, sizeof(tmp), "%02d:%02d", pStartZeit->tm_hour, pStartZeit->tm_min);
-					g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_NUMBER]->RenderString(x+ 5+ numwidth+ 6, ypos + fheight, width- numwidth- 20- 15 -prg_offset, tmp, ecolor, fheight);
+					g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_NUMBER]->RenderString(x + OFFSET_INNER_SMALL + numwidth + 6, ypos + fheight, width - numwidth - 15 - prg_offset - 2*OFFSET_INNER_MID, tmp, ecolor, fheight);
 				}
 				else
 				{
@@ -2112,18 +2146,20 @@ void CChannelList::paintItem(int pos, const bool firstpaint)
 				}
 			}
 
-			g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->RenderString(x+ 5+ numwidth+ 10+prg_offset, ypos+ fheight, width- numwidth- 40- 15-prg_offset, nameAndDescription, color);
+			g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->RenderString(x + OFFSET_INNER_SMALL + numwidth + OFFSET_INNER_MID + prg_offset, ypos + fheight, width - numwidth - 4*OFFSET_INNER_MID - 15 - prg_offset, nameAndDescription, color);
 			if (g_settings.channellist_epgtext_align_right) {
 				// align right
-				g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->RenderString(x + width - 20 - ch_desc_len - icon_space - 4, ypos + fheight, ch_desc_len, p_event->description, ecolor);
+				g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->RenderString(x + width - 15 - offset_right - ch_desc_len, ypos + fheight, ch_desc_len, p_event->description, ecolor);
 			}
 			else {
 				// align left
-				g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->RenderString(x+ 5+ numwidth+ 10+ ch_name_len+ 5+prg_offset, ypos+ fheight, ch_desc_len, p_event->description, ecolor);
+				g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->RenderString(x + OFFSET_INNER_SMALL + numwidth + OFFSET_INNER_MID + ch_name_len + OFFSET_INNER_SMALL + prg_offset, ypos + fheight, ch_desc_len, p_event->description, ecolor);
 			}
 		}
-		else {
-			if(g_settings.channellist_progressbar_design != CProgressBar::PB_OFF) {
+		else
+		{
+			if (g_settings.channellist_progressbar_design != CProgressBar::PB_OFF)
+			{
 				pb.setValues(0, pb_max);
 				pb.paint();
 			}
