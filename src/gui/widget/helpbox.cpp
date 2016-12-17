@@ -44,7 +44,7 @@ Helpbox::Helpbox(	const string& Title,
 						CC_SHADOW_ON)
 {
 	page = 0;
-	hbox_y = 1;
+	hbox_y = 0;
 	setWindowHeaderButtons(CComponentsHeader::CC_BTN_MENU | CComponentsHeader::CC_BTN_EXIT);
 	ccw_footer->setButtonLabel(NEUTRINO_ICON_BUTTON_HOME, LOCALE_MESSAGEBOX_BACK);
 
@@ -189,13 +189,6 @@ void Helpbox::addLine(const std::string& text, const int& text_mode, const int& 
 
 void Helpbox::addPagebreak(void)
 {
-	int w, h;
-	/* adjust scrollbar to button width */
-	if(!page)
-	{
-		CFrameBuffer::getInstance()->getIconSize(NEUTRINO_ICON_BUTTON_UP, &w, &h);
-		setScrollBarWidth(w);
-	}
 	page ++;
 	setPageCount(page);
 	hbox_y = 1;
