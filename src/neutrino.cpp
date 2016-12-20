@@ -950,12 +950,15 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	g_settings.lcd_setting_dim_brightness = configfile.getInt32("lcd_dim_brightness", 0);
 	g_settings.lcd_info_line = configfile.getInt32("lcd_info_line", 0);//channel name or clock
 #if HAVE_DUCKBOX_HARDWARE || HAVE_SPARK_HARDWARE
-	if ( j00zekVFDsize < 4) {
+	if ( j00zekVFDsize < 4 ) {
 		g_settings.lcd_vfd_scroll = configfile.getInt32("lcd_vfd_scroll", 0);
 		g_settings.lcd_vfd_time_format = configfile.getInt32("lcd_vfd_time_format", 0);
 	} else if ( j00zekVFDsize == 4) {
 		g_settings.lcd_vfd_scroll = configfile.getInt32("lcd_vfd_scroll", 0);
 		g_settings.lcd_vfd_time_format = configfile.getInt32("lcd_vfd_time_format", 4);
+	} else if (!strncasecmp(j00zekBoxType, "HL101", 5)) {
+		g_settings.lcd_vfd_scroll = configfile.getInt32("lcd_vfd_scroll", 0);
+		g_settings.lcd_vfd_time_format = configfile.getInt32("lcd_vfd_time_format", 1);
 	} else {
 		g_settings.lcd_vfd_scroll = configfile.getInt32("lcd_vfd_scroll", 1);
 		g_settings.lcd_vfd_time_format = configfile.getInt32("lcd_vfd_time_format", 1);

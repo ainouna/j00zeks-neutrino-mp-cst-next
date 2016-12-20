@@ -381,11 +381,14 @@ bool CUserMenu::showUserMenu(neutrino_msg_t msg)
 			menu_item = new CMenuForwarder(!g_settings.mode_clock ? LOCALE_CLOCK_SWITCH_ON:LOCALE_CLOCK_SWITCH_OFF, true, NULL, neutrino, "clock_switch", key, icon);
 			menu_item->setHint("", LOCALE_MENU_HINT_CLOCK_MODE);
 			break;
+		}
 		case SNeutrinoSettings::ITEM_SOFTCAM_RESTART:
+		{
 			keyhelper.get(&key,&icon);
 			menu_item = new CMenuForwarder(LOCALE_J00ZEK_OSCAM_RESTART, true, NULL, neutrino, "j00zek_restartoscam", key, icon);
 			menu_item->setHint(NEUTRINO_ICON_HINT_SOFT_RESTART, LOCALE_MENU_HINT_SOFT_RESTART);
 			break;
+		}
 		case SNeutrinoSettings::ITEM_GAMES:
 		{
 			keyhelper.get(&key,&icon);
@@ -504,7 +507,7 @@ bool CUserMenu::showUserMenu(neutrino_msg_t msg)
 			menu_item->setHint(NEUTRINO_ICON_HINT_RASS, LOCALE_MENU_HINT_RASS);
 			break;
 		}
-#if !HAVE_SPARK_HARDWARE
+#if !HAVE_SPARK_HARDWARE && !HAVE_DUCKBOX_HARDWARE
 		case SNeutrinoSettings::ITEM_CAM:
 		{
 			keyhelper.get(&key,&icon);
