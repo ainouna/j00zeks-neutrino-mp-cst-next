@@ -603,7 +603,9 @@ void CVFD::showTime(bool force)
 		return;
 	}
 	if (showclock) {
-		if ( (mode == MODE_STANDBY && !isSpark7162) || ( g_settings.lcd_info_line == 1 && (MODE_TVRADIO == mode))) {
+		if ( (mode == MODE_STANDBY && !isSpark7162 && g_settings.lcd_vfd_time_format != 0 /*0 means disabled clock in standby*/) ||
+			( g_settings.lcd_info_line == 1 && (MODE_TVRADIO == mode)))
+		{
 			char timestr[21] = {0};
 			struct timeb tm;
 			struct tm * t;
