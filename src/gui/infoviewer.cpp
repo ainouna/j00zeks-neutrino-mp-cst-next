@@ -125,6 +125,8 @@ CInfoViewer::CInfoViewer ()
 	clock = NULL;
 	frameBuffer = CFrameBuffer::getInstance();
 	infoViewerBB = CInfoViewerBB::getInstance();
+    ecmInfoBox = NULL; 
+    md5_ecmInfo = "0";
 	InfoHeightY = 0;
 	ButtonWidth = 0;
 	rt_dx = 0;
@@ -738,6 +740,8 @@ void CInfoViewer::check_channellogo_ca_SettingsChange()
 		infoViewerBB->initBBOffset();
 		start();
 	}
+    else 
+        infoViewerBB->Init();
 }
 
 void CInfoViewer::showTitle(t_channel_id chid, const bool calledFromNumZap, int epgpos)
@@ -1102,11 +1106,21 @@ void CInfoViewer::loop(bool show_dot)
 				CMoviePlayerGui::getInstance().setFromInfoviewer(true);
 				g_RCInput->postMsg (msg, data);
 				hideIt = true;
-			}
-			else
-				g_RCInput->postMsg (NeutrinoMessages::SHOW_EPG, 0);
-			res = messages_return::cancel_info;
-		} else if ((msg == NeutrinoMessages::EVT_TIMER) && (data == fader.GetFadeTimer())) {
+			} else if (g_settings.show_ecm_pos) { 
+                if (g_settings.show_ecm) { 
+                    g_settings.show_ecm = 0; 
+                    ecmInfoBox_hide(); 
+                    g_RCInput->postMsg (NeutrinoMessages::SHOW_EPG, 0); 
+                    res = messages_return::cancel_info; 
+                } else { 
+                    g_settings.show_ecm = 1; 
+                    infoViewerBB->showIcon_CA_Status(0); 
+                } 
+            } else { 
+                g_RCInput->postMsg (NeutrinoMessages::SHOW_EPG, 0); 
+                res = messages_return::cancel_info; 
+            } 
+        } else if ((msg == NeutrinoMessages::EVT_TIMER) && (data == fader.GetFadeTimer())) {
 			if(fader.FadeDone())
 				res = messages_return::cancel_info;
 		} else if ((msg == CRCInput::RC_ok) || (msg == CRCInput::RC_home) || (msg == CRCInput::RC_timeout)) {
@@ -1530,7 +1544,16 @@ int CInfoViewer::handleMsg (const neutrino_msg_t msg, neutrino_msg_data_t data)
 				infoViewerBB->showIcon_VTXT();
 				infoViewerBB->showIcon_SubT();
 				//infoViewerBB->showIcon_CA_Status(0);
-				infoViewerBB->showIcon_Resolution();
+                if(file_exists("/tmp/ecm.info")) 
+                { 
+                    std::string md5_tmp = filehash((char *)"/tmp/ecm.info"); 
+                    //printf("CInfoViewer::loop() ecm.info.tmp = %s\nCInfoViewer::loop() ecm.info     = %s\n",md5_ecmInfo.c_str(),md5_tmp.c_str()); 
+                    if(md5_ecmInfo != md5_tmp) { 
+                        puts("CInfoViewer::loop() CA reload"); 
+                        infoViewerBB->showIcon_CA_Status(0); 
+                    } 
+                }
+                infoViewerBB->showIcon_Resolution();
 				infoViewerBB->showIcon_Tuner();
 			}
 		}
@@ -2271,7 +2294,9 @@ void CInfoViewer::killTitle()
 			g_Radiotext->S_RtOsd = g_Radiotext->haveRadiotext() ? 1 : 0;
 			killRadiotext();
 		}
-		killInfobarText();
+        if (g_settings.show_ecm) 
+            ecmInfoBox_hide(); 
+        killInfobarText();
 		frameBuffer->blit();
 	}
 	showButtonBar = false;
@@ -2558,4 +2583,79 @@ void CInfoViewer::ResetModules(bool kill)
 	delete rec;
 	rec = NULL;
 	infoViewerBB->ResetModules();
+}
+
+void CInfoViewer::ecmInfoBox_show(const char * txt, int w, int h, Font * font) 
+{ 
+   if (ecmInfoBox != NULL) 
+       ecmInfoBox_hide(); 
+
+   // manipulate title font 
+   int storedSize = g_Font[SNeutrinoSettings::FONT_TYPE_MENU_TITLE]->getSize(); 
+   g_Font[SNeutrinoSettings::FONT_TYPE_MENU_TITLE]->setSize((int)(font->getSize() * 150 / 100)); 
+   //create new window 
+   ecmInfoBox = new CComponentsWindowMax(LOCALE_ECMINFO, NEUTRINO_ICON_INFO); 
+
+   //calc available width (width of Infobar) 
+   int max_w = BoxEndX - BoxStartX; 
+   //calc available height (space between Top and Infobar) 
+   int max_h = BoxStartY +240 - frameBuffer->getScreenY() - 2*OFFSET_SHADOW; 
+
+   //get window header object 
+   CComponentsHeader* winheader = ecmInfoBox->getHeaderObject(); 
+   int h_header = winheader->getHeight(); 
+
+   //remove window footer object 
+   ecmInfoBox->showFooter(false); 
+
+   //set new window dimensions 
+   int h_offset = 5; 
+   int w_offset = 10; 
+   ecmInfoBox->setWidth(min(max_w, w + 2*w_offset)); 
+   ecmInfoBox->setHeight(min(max_h, h_header + h + 2*h_offset)); 
+   ecmInfoBox->Refresh(); 
+
+   //calc window position 
+   int pos_x; 
+   switch (g_settings.show_ecm_pos) { 
+       case 3: // right 
+           pos_x = BoxEndX - ecmInfoBox->getWidth(); 
+           break; 
+       case 1: // left 
+           pos_x = BoxStartX; 
+           break; 
+       case 2: // center 
+       default: 
+           pos_x = frameBuffer->getScreenX() + (max_w/2) - (ecmInfoBox->getWidth()/2); 
+           break; 
+   } 
+   int pos_y = frameBuffer->getScreenY() + (max_h/2) - (ecmInfoBox->getHeight()/2); 
+   ecmInfoBox->setXPos(pos_x); 
+   ecmInfoBox->setYPos(pos_y); 
+
+   //get window body object 
+   CComponentsForm* winbody = ecmInfoBox->getBodyObject(); 
+ 
+   // create textbox object 
+   CComponentsText* ecmText = new CComponentsText(0, 0, winbody->getWidth(), winbody->getHeight()); 
+   ecmText->setTextBorderWidth(w_offset, h_offset); 
+   ecmText->setText(txt, CTextBox::TOP | CTextBox::NO_AUTO_LINEBREAK, font); 
+   ecmText->setCorner(RADIUS_LARGE, CORNER_BOTTOM); 
+
+   // add textbox object to window 
+   ecmInfoBox->addWindowItem(ecmText); 
+   ecmInfoBox->enableShadow(CC_SHADOW_ON); 
+   ecmInfoBox->paint(CC_SAVE_SCREEN_NO); 
+ 
+   // restore title font 
+   g_Font[SNeutrinoSettings::FONT_TYPE_MENU_TITLE]->setSize(storedSize); 
+} 
+
+void CInfoViewer::ecmInfoBox_hide() 
+{ 
+   if (ecmInfoBox != NULL) { 
+       ecmInfoBox->kill(); 
+       delete ecmInfoBox; 
+       ecmInfoBox = NULL; 
+   } 
 }

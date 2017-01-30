@@ -378,7 +378,9 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	}
 	parentallocked = !access(NEUTRINO_PARENTALLOCKED_FILE, R_OK);
 
-	//theme/color options
+    g_settings.show_ecm = configfile.getInt32("show_ecm" , 0); 
+    g_settings.show_ecm_pos = configfile.getInt32("show_ecm_pos" , 0); 
+    //theme/color options
 	CThemes::getTheme(configfile);
 
 	g_settings.softupdate_autocheck = configfile.getBool("softupdate_autocheck" , false);
@@ -820,7 +822,6 @@ int CNeutrinoApp::loadSetup(const char * fname)
 	g_settings.eventlist_additional = configfile.getInt32("eventlist_additional", 0);
 	g_settings.eventlist_epgplus = configfile.getInt32("eventlist_epgplus", 1);
 	g_settings.channellist_epgtext_align_right	= configfile.getBool("channellist_epgtext_align_right"          , false);
-	g_settings.channellist_progressbar_design = configfile.getInt32("channellist_progressbar_design", g_settings.progressbar_design);
 	g_settings.channellist_foot	= configfile.getInt32("channellist_foot"          ,  2);//default next Event
 	g_settings.channellist_new_zap_mode = configfile.getInt32("channellist_new_zap_mode", 1);
 	g_settings.channellist_hdicon = configfile.getInt32("channellist_hdicon", 0); //default off
@@ -1171,6 +1172,9 @@ void CNeutrinoApp::saveSetup(const char * fname)
 	if(!scansettings.saveSettings(NEUTRINO_SCAN_SETTINGS_FILE)) {
 		dprintf(DEBUG_NORMAL, "error while saving scan-settings!\n");
 	}
+
+    configfile.setInt32("show_ecm" , g_settings.show_ecm); 
+    configfile.setInt32("show_ecm_pos" , g_settings.show_ecm_pos); 
 
 	//theme/color options
 	CThemes::setTheme(configfile);

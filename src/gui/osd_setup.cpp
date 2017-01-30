@@ -130,7 +130,8 @@ const SNeutrinoSettings::FONT_TYPES infobar_font_sizes[] =
 	SNeutrinoSettings::FONT_TYPE_INFOBAR_NUMBER,
 	SNeutrinoSettings::FONT_TYPE_INFOBAR_CHANNAME,
 	SNeutrinoSettings::FONT_TYPE_INFOBAR_INFO,
-	SNeutrinoSettings::FONT_TYPE_INFOBAR_SMALL
+    SNeutrinoSettings::FONT_TYPE_INFOBAR_SMALL, 
+    SNeutrinoSettings::FONT_TYPE_INFOBAR_ECMINFO 
 };
 size_t infobar_font_items = sizeof(infobar_font_sizes)/sizeof(infobar_font_sizes[0]);
 
@@ -165,7 +166,7 @@ const SNeutrinoSettings::FONT_TYPES other_font_sizes[] =
 {
 	SNeutrinoSettings::FONT_TYPE_SUBTITLES,
 	SNeutrinoSettings::FONT_TYPE_FILEBROWSER_ITEM,
-    SNeutrinoSettings::FONT_TYPE_BUTTON_TEXT
+    SNeutrinoSettings::FONT_TYPE_BUTTON_TEXT,
 	SNeutrinoSettings::FONT_TYPE_MOVIEBROWSER_LIST,
 	SNeutrinoSettings::FONT_TYPE_MOVIEBROWSER_INFO
 };
@@ -215,7 +216,8 @@ font_sizes_struct neutrino_font[SNeutrinoSettings::FONT_TYPE_COUNT] =
 	{LOCALE_FONTSIZE_INFOBAR_CHANNAME   ,  30, CNeutrinoFonts::FONT_STYLE_BOLD   , 0},
 	{LOCALE_FONTSIZE_INFOBAR_INFO       ,  20, CNeutrinoFonts::FONT_STYLE_REGULAR, 1},
 	{LOCALE_FONTSIZE_INFOBAR_SMALL      ,  14, CNeutrinoFonts::FONT_STYLE_REGULAR, 1},
-	{LOCALE_FONTSIZE_FILEBROWSER_ITEM   ,  16, CNeutrinoFonts::FONT_STYLE_BOLD   , 1},
+    {LOCALE_FONTSIZE_INFOBAR_ECMINFO    ,  15, CNeutrinoFonts::FONT_STYLE_REGULAR, 0},
+    {LOCALE_FONTSIZE_FILEBROWSER_ITEM   ,  16, CNeutrinoFonts::FONT_STYLE_BOLD   , 1},
 	{LOCALE_FONTSIZE_MENU_HINT          ,  16, CNeutrinoFonts::FONT_STYLE_REGULAR, 0},
 	{LOCALE_FONTSIZE_MOVIEBROWSER_HEAD  ,  15, CNeutrinoFonts::FONT_STYLE_REGULAR, 2},
 	{LOCALE_FONTSIZE_MOVIEBROWSER_LIST  ,  17, CNeutrinoFonts::FONT_STYLE_REGULAR, 0},
@@ -1136,6 +1138,15 @@ const CMenuOptionChooser::keyval HDD_STATFS_OPTIONS[HDD_STATFS_OPTION_COUNT] =
 	{ SNeutrinoSettings::HDD_STATFS_RECORDING,      LOCALE_HDD_STATFS_RECORDING }
 };
 
+const CMenuOptionChooser::keyval INFOVIEWER_ECMINFO_OPTIONS[] = 
+{ 
+    { 0, LOCALE_OPTIONS_OFF }, 
+    { 1, LOCALE_SETTINGS_POS_TOP_LEFT }, 
+    { 2, LOCALE_SETTINGS_POS_TOP_CENTER }, 
+    { 3, LOCALE_SETTINGS_POS_TOP_RIGHT } 
+}; 
+#define INFOVIEWER_ECMINFO_OPTION_COUNT (sizeof(INFOVIEWER_ECMINFO_OPTIONS)/sizeof(CMenuOptionChooser::keyval)) 
+
 //infobar
 void COsdSetup::showOsdInfobarSetup(CMenuWidget *menu_infobar)
 {
@@ -1204,7 +1215,12 @@ void COsdSetup::showOsdInfobarSetup(CMenuWidget *menu_infobar)
 	menu_infobar->addItem(mc);
 	casystemActivate.Add(mc);
 
-	menu_infobar->addItem(GenericMenuSeparator);
+    // ecm-Info 
+    mc = new CMenuOptionChooser(LOCALE_ECMINFO_SHOW, &g_settings.show_ecm_pos, INFOVIEWER_ECMINFO_OPTIONS, INFOVIEWER_ECMINFO_OPTION_COUNT, true, this); 
+    mc->setHint("", LOCALE_MENU_HINT_INFOBAR_ECMINFO); 
+    menu_infobar->addItem(mc); 
+
+    menu_infobar->addItem(GenericMenuSeparator);
 
 	// flash/hdd statfs
 	mc = new CMenuOptionChooser(LOCALE_MISCSETTINGS_INFOBAR_SHOW_SYSFS_HDD, &g_settings.infobar_show_sysfs_hdd, OPTIONS_OFF0_ON1_OPTIONS, OPTIONS_OFF0_ON1_OPTION_COUNT, true, infobarHddNotifier);
@@ -1663,8 +1679,7 @@ void COsdSetup::paintWindowSize(int w, int h)
 		win_demo->setColorBody(COL_BACKGROUND);
 		win_demo->setColorFrame(COL_RED);
 		win_demo->doPaintBg(true);
-	}
-	else {
+	} else {
 		if (win_demo->isPainted())
 			win_demo->kill();
 	}

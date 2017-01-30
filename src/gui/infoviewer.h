@@ -149,6 +149,8 @@ class CInfoViewer
 	void check_channellogo_ca_SettingsChange();
 	void sendNoEpg(const t_channel_id channel_id);
 	bool showLivestreamInfo();
+    
+    CComponentsWindowMax *ecmInfoBox;
 
  public:
 	bool     chanready;
@@ -164,6 +166,10 @@ class CInfoViewer
 	int      ChanInfoX;
 	bool     showButtonBar;
 	bool     isVolscale;
+
+    std::string md5_ecmInfo; 
+    void ecmInfoBox_hide(); 
+    void ecmInfoBox_show(const char * txt, int w, int h, Font * font); 
 
 	CInfoViewer();
 	~CInfoViewer();

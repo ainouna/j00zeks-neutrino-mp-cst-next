@@ -808,7 +808,8 @@ struct SNeutrinoSettings
 		FONT_TYPE_INFOBAR_CHANNAME,
 		FONT_TYPE_INFOBAR_INFO,
 		FONT_TYPE_INFOBAR_SMALL,
-		FONT_TYPE_FILEBROWSER_ITEM,
+		FONT_TYPE_INFOBAR_ECMINFO,
+        FONT_TYPE_FILEBROWSER_ITEM,
 		FONT_TYPE_MENU_HINT,
 		FONT_TYPE_MOVIEBROWSER_HEAD,
 		FONT_TYPE_MOVIEBROWSER_LIST,
@@ -922,6 +923,9 @@ struct SNeutrinoSettings
 	std::string	font_file;
 	std::string	ttx_font_file;
 	std::string	sub_font_file;
+
+    int     show_ecm; 
+    int     show_ecm_pos; 
 
 	int		livestreamResolution;
 	std::string	livestreamScriptPath;
