@@ -2536,7 +2536,6 @@ TIMER_START();
 		startwizard.exec(NULL, "");
 	}
 
-	InitZapper();
 	if(loadSettingsErg) {
 		hintBox->hide();
 		dprintf(DEBUG_INFO, "config file or options missing\n");
@@ -2545,6 +2544,8 @@ TIMER_START();
 		configfile.setModifiedFlag(true);
 		saveSetup(NEUTRINO_SETTINGS_FILE);
 	}
+
+	InitZapper();
 
 	CHDDDestExec * hdd = new CHDDDestExec();
 	hdd->exec(NULL, "");
@@ -4097,6 +4098,7 @@ void CNeutrinoApp::ExitRun(const bool /*write_si*/, int retcode)
 
 				my_system("/etc/init.d/rcK");
 				sync();
+				CFSMounter::umount(); // unreachable NFS server
 				my_system(2,"/bin/umount", "-a");
 				sleep(1);
 

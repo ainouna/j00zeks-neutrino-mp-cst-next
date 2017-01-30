@@ -684,11 +684,14 @@ void CTextBox::refreshText(void)
 	if (m_nMode & TOP)
 		// move to top of frame
 		y += m_nFontTextHeight + ((m_cFrameTextRel.iHeight - m_nFontTextHeight * m_nLinesPerPage) >> 1);
-	else if (m_nMode & BOTTOM)
+	else if (m_nMode & BOTTOM) {
+		/* if BOTTOM && !SCROLL, show the last lines if more than one page worth of text is in cLineArray */
+		if (!(m_nMode & SCROLL) && (m_nNrOfLines > m_nLinesPerPage))
+			m_nCurrentLine = m_nNrOfLines - m_nLinesPerPage;
 		// move to bottom of frame
 		y += m_cFrameTextRel.iHeight - (lines > 1 ? (lines - 1)*m_nFontTextHeight : 0) - text_Vborder_width;
 		//m_nFontTextHeight + text_Vborder_width /*- ((m_cFrameTextRel.iHeight + m_nFontTextHeight*/ * m_nLinesPerPage/*) >> 1)*/;
-	else
+	} else
 		// fit into mid of frame space
 		y += m_nFontTextHeight + ((m_cFrameTextRel.iHeight - m_nFontTextHeight * lines) >> 1);
 
@@ -718,7 +721,7 @@ void CTextBox::refreshText(void)
 		frameBuffer->paintBoxRel(tx, ty-th, tw, th, COL_RED, m_nBgRadius, m_nBgRadiusType);
 #endif
 		//TRACE("[CTextBox] %s Line %d m_cFrame.iX %d m_cFrameTextRel.iX %d\r\n", __FUNCTION__, __LINE__, m_cFrame.iX, m_cFrameTextRel.iX);
-		m_pcFontText->RenderString(tx, ty, tw, m_cLineArray[i].c_str(), m_textColor, 0, m_renderMode | (m_utf8_encoded) ? Font::IS_UTF8 : 0);
+		m_pcFontText->RenderString(tx, ty, tw, m_cLineArray[i].c_str(), m_textColor, 0, (m_renderMode | m_utf8_encoded) ? Font::IS_UTF8 : 0);
 		m_old_cText = m_cText;
 		y += m_nFontTextHeight;
 	}
