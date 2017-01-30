@@ -1085,16 +1085,19 @@ void* CInfoViewerBB::Thread_paint_cam_icons(void)
  
 int CInfoViewerBB::check_ecmInfo() 
 { 
-   int caid = 0; 
+  //printf("%s\n", __func__);
+  int caid = 0; 
    if (File_copy("/tmp/ecm.info", "/tmp/ecm.info.tmp")) { 
        g_InfoViewer->md5_ecmInfo = filehash((char *)"/tmp/ecm.info.tmp"); 
        caid = parse_ecmInfo("/tmp/ecm.info.tmp"); 
-   } 
+   } else
+     printf("%s:error copying /tmp/ecm.info to /tmp/ecm.info.tmp\n", __func__);
    return caid; 
 } 
  
 int CInfoViewerBB::parse_ecmInfo(const char * file) 
 { 
+   //printf("%s\n", __func__);
    int acaid = 0; 
    char *buffer; 
    ssize_t read; 

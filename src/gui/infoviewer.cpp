@@ -1100,29 +1100,35 @@ void CInfoViewer::loop(bool show_dot)
 		} else if (CNeutrinoApp::getInstance()->listModeKey(msg)) {
 			g_RCInput->postMsg (msg, 0);
 			res = messages_return::cancel_info;
-		} else if (msg == CRCInput::RC_help || msg == CRCInput::RC_info) {
-			if (fileplay)
-			{
-				CMoviePlayerGui::getInstance().setFromInfoviewer(true);
-				g_RCInput->postMsg (msg, data);
-				hideIt = true;
-			} else if (g_settings.show_ecm_pos) { 
-                if (g_settings.show_ecm) { 
-                    g_settings.show_ecm = 0; 
-                    ecmInfoBox_hide(); 
-                    g_RCInput->postMsg (NeutrinoMessages::SHOW_EPG, 0); 
-                    res = messages_return::cancel_info; 
-                } else { 
-                    g_settings.show_ecm = 1; 
-                    infoViewerBB->showIcon_CA_Status(0); 
-                } 
-            } else { 
-                g_RCInput->postMsg (NeutrinoMessages::SHOW_EPG, 0); 
-                res = messages_return::cancel_info; 
-            } 
-        } else if ((msg == NeutrinoMessages::EVT_TIMER) && (data == fader.GetFadeTimer())) {
-			if(fader.FadeDone())
-				res = messages_return::cancel_info;
+    } else if (msg == CRCInput::RC_help || msg == CRCInput::RC_info) {
+      if (fileplay)
+      {
+        CMoviePlayerGui::getInstance().setFromInfoviewer(true);
+        g_RCInput->postMsg (msg, data);
+        hideIt = true;
+        res = messages_return::cancel_info;
+      }
+      else
+        if (g_settings.show_ecm_pos)
+        {
+          if (g_settings.show_ecm) {
+            g_settings.show_ecm = 0;
+            ecmInfoBox_hide();
+            g_RCInput->postMsg (NeutrinoMessages::SHOW_EPG, 0);
+            res = messages_return::cancel_info;
+          } else {
+            g_settings.show_ecm = 1;
+            infoViewerBB->showIcon_CA_Status(0);
+          }
+        }
+        else
+        {
+          g_RCInput->postMsg (NeutrinoMessages::SHOW_EPG, 0);
+          res = messages_return::cancel_info;
+        }
+    } else if ((msg == NeutrinoMessages::EVT_TIMER) && (data == fader.GetFadeTimer())) {
+      if(fader.FadeDone())
+        res = messages_return::cancel_info;
 		} else if ((msg == CRCInput::RC_ok) || (msg == CRCInput::RC_home) || (msg == CRCInput::RC_timeout)) {
 			if ((g_settings.mode_left_right_key_tv == SNeutrinoSettings::VZAP) && (msg == CRCInput::RC_ok))
 			{

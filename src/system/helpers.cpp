@@ -1306,18 +1306,11 @@ bool File_copy(std::string rstr, std::string wstr)
  
            delete[] buffer; 
            outfile.close(); 
-       } 
-       else 
-       { 
-           return false; 
+           return true; 
        } 
        infile.close(); 
-       return true; 
    } 
-   else 
-   { 
-       return false; 
-   } 
+   return false; 
 } 
  
 // rreturns the pid of the first process found in /proc 
