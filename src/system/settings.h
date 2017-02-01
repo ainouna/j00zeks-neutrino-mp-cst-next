@@ -523,8 +523,6 @@ struct SNeutrinoSettings
 	std::string skinfile;
 	bool osd_colorsettings_advanced_mode;
 
-	int contrast_fonts;
-
 	//network
 #define NETWORK_NFS_NR_OF_ENTRIES 8
 	struct {
