@@ -30,8 +30,9 @@
 #include <vector>
 #include <stdio.h>    /* printf       */
 #include <sys/time.h> /* gettimeofday */
-#include <driver/framebuffer.h>
+#include <map>
 #include <pthread.h>
+#include <inttypes.h>
 class CPictureViewer
 {
 	struct cformathandler 
@@ -65,7 +66,7 @@ class CPictureViewer
 	void Cleanup();
 	void SetVisible(int startx, int endx, int starty, int endy);
 	static double m_aspect_ratio_correction;
-	bool DisplayImage (const std::string & name, int posx, int posy, int width, int height, int transp=CFrameBuffer::TM_EMPTY);
+	bool DisplayImage (const std::string & name, int posx, int posy, int width, int height, int transp=0 /*CFrameBuffer::TM_EMPTY*/);
 // 	bool DisplayLogo (uint64_t channel_id, int posx, int posy, int width, int height);
 	bool GetLogoName(const uint64_t& channel_id, const std::string& ChanName, std::string & name, int *width = NULL, int *height = NULL);
 	fb_pixel_t * getImage (const std::string & name, int width, int height);
@@ -122,6 +123,7 @@ class CPictureViewer
 	void add_format(int (*picsize)(const char *,int *,int*,int,int),int (*picread)(const char *,unsigned char **,int*,int*), int (*id)(const char*));
 	unsigned char * int_Resize(unsigned char *orgin, int ox, int oy, int dx, int dy, ScalingMode type, unsigned char * dst, bool alpha);
 	fb_pixel_t * int_getImage(const std::string & name, int *width, int *height, bool GetImage);
+	bool checkfreemem(size_t bufsize);
 };
 
 

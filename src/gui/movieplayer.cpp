@@ -54,6 +54,7 @@
 #include <driver/abstime.h>
 #include <driver/record.h>
 #include <driver/volume.h>
+#include <driver/fontrenderer.h>
 #include <eitd/edvbstring.h>
 #include <system/helpers.h>
 
@@ -2212,12 +2213,11 @@ void CMoviePlayerGui::addAudioFormat(int count, std::string &apidtitle, bool& en
 			apidtitle.append(" (AAC)");
 			break;
 		case 6: /*DTS*/
-#if !defined (BOXMODEL_APOLLO)
 			if (apidtitle.find("DTS") == std::string::npos)
 				apidtitle.append(" (DTS)");
-			else
+#ifndef BOXMODEL_CS_HD2
+			enabled = false;
 #endif
-				enabled = false;
 			break;
 		case 7: /*MLP*/
 			apidtitle.append(" (MLP)");
