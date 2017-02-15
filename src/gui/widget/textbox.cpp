@@ -791,7 +791,6 @@ void CTextBox::refresh(void)
 	refreshScroll();
 	m_blit = _m_blit;
 	refreshText();
-	frameBuffer->blit();
 	OnAfterRefresh();
 }
 
