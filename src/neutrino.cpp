@@ -2372,6 +2372,8 @@ TIMER_START();
 	CVFD::getInstance()->Clear();
 	if (j00zekVFDsize == 4)
 		CVFD::getInstance()->ShowText("Strt");
+  else if (j00zekVFDsize == 5)
+    CVFD::getInstance()->ShowText("Start");
 	else
 		CVFD::getInstance()->ShowText(g_Locale->getText(LOCALE_NEUTRINO_STARTING));
 #if !HAVE_DUCKBOX_HARDWARE
@@ -4338,7 +4340,7 @@ void CNeutrinoApp::standbyMode( bool bOnOff, bool fromDeepStandby )
 #ifdef ENABLE_GRAPHLCD
 		nGLCD::StandbyMode(true);
 #endif
-		if (j00zekVFDsize == 4)
+		if (j00zekVFDsize < 8)
 			CVFD::getInstance()->ShowText("off");
 		else if (g_settings.language == "polski")
 			CVFD::getInstance()->ShowText("Czuwanie...");
@@ -4426,6 +4428,8 @@ void CNeutrinoApp::standbyMode( bool bOnOff, bool fromDeepStandby )
 		CVFD::getInstance()->setMode(CVFD::MODE_TVRADIO);
 		if (j00zekVFDsize == 4)
 			CVFD::getInstance()->ShowText("on");
+    else if (j00zekVFDsize < 8 )
+      CVFD::getInstance()->ShowText("start");
 		else if (g_settings.language == "polski")
 			CVFD::getInstance()->ShowText("Pobudka...");
 		else

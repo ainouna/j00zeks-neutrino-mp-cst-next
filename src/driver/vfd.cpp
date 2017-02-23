@@ -100,7 +100,7 @@ void j00zek_get_vfd_config()
 		}
 	}
 	
-	j00zekDBG(J00ZEK_DBG,"[j00zek_get_vfd_config] kBoxType=%s, VFDsize=%d",j00zekBoxType, j00zekVFDsize);
+	j00zekDBG(J00ZEK_DBG,"[j00zek_get_vfd_config] kBoxType=%s, VFDsize=%d\n",j00zekBoxType, j00zekVFDsize);
 	if  (!strncasecmp(j00zekBoxType, "SPARK7162", 9)) {
 		IconsNum = 44;
 		brightnessDivider = 2;
@@ -155,7 +155,7 @@ void j00zek_get_vfd_config()
 		PowerOnIconID = 2;
 	}
 		
-	j00zekDBG(J00ZEK_DBG,",IconsNum=%d,brightnessDivider=%d,isSpark7162=%d\n", IconsNum, brightnessDivider, isSpark7162);
+	j00zekDBG(J00ZEK_DBG,"[j00zek_get_vfd_config] IconsNum=%d,brightnessDivider=%d,isSpark7162=%d\n", IconsNum, brightnessDivider, isSpark7162);
 	return;
 }
 
