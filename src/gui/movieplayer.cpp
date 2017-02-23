@@ -133,17 +133,24 @@ CMoviePlayerGui::CMoviePlayerGui()
 
 CMoviePlayerGui::~CMoviePlayerGui()
 {
-	//playback->Close();
 	if (this == instance_mp)
 		stopPlayBack();
-	delete moviebrowser;
-	moviebrowser = NULL;
-	delete filebrowser;
-	filebrowser = NULL;
-	delete bookmarkmanager;
-	bookmarkmanager = NULL;
-	delete playback;
-	playback = NULL;
+	if(moviebrowser){
+		delete moviebrowser;
+		moviebrowser = NULL;
+	}
+	if(filebrowser){
+		delete filebrowser;
+		filebrowser = NULL;
+	}
+	if(bookmarkmanager){
+		delete bookmarkmanager;
+		bookmarkmanager = NULL;
+	}
+	if(playback){
+		delete playback;
+		playback = NULL;
+	}
 	if (this == instance_mp) {
 		delete instance_bg;
 		instance_bg = NULL;
@@ -2897,7 +2904,7 @@ void CMoviePlayerGui::showSubtitle(neutrino_msg_data_t data)
 
 			int xoff = (double) sub->rects[i]->x * xc;
 			int yoff = (double) sub->rects[i]->y * yc;
-			int nw = GetWidth4FB_HW_ACC(xoff, (double) sub->rects[i]->w * xc);
+			int nw = frameBuffer->getWidth4FB_HW_ACC(xoff, (double) sub->rects[i]->w * xc);
 			int nh = (double) sub->rects[i]->h * yc;
 
 			printf("Draw: #%d at %d,%d size %dx%d colors %d (x=%d y=%d w=%d h=%d) \n", i+1,

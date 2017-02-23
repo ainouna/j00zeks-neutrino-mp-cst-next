@@ -4,7 +4,7 @@
 	Copyright (C) 2001 Steffen Hehn 'McClean'
                       2003 thegoodguy
 
-	Copyright (C) 2008-2012 Stefan Seyfried
+	Copyright (C) 2008-2014,2016-2017 Stefan Seyfried
 	Copyright (C) 2013-2014 martii
 
 	License: GPL
@@ -33,7 +33,6 @@
 #include <system/helpers.h>
 
 #include <stdio.h>
-#include <asm/types.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/time.h>
@@ -49,6 +48,8 @@
 #include <sys/un.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+
+#include <dirent.h>
 
 #include <eventserver.h>
 
@@ -69,33 +70,10 @@
 
 #define ENABLE_REPEAT_CHECK
 
-#if 0
-#if HAVE_SPARK_HARDWARE
-/* this relies on event0 being the AOTOM frontpanel driver device
- * TODO: what if another input device is present? */
-const char * const RC_EVENT_DEVICE[NUMBER_OF_EVENT_DEVICES] = {"/dev/input/nevis_ir"};
-#elif HAVE_GENERIC_HARDWARE
-/* the FIFO created by libstb-hal */
-const char * const RC_EVENT_DEVICE[NUMBER_OF_EVENT_DEVICES] = {"/tmp/neutrino.input"};
-#else
-#if HAVE_DUCKBOX_HARDWARE
-#if defined (BOXMODEL_IPBOX9900) || defined (BOXMODEL_IPBOX99) || defined (BOXMODEL_IPBOX55) || defined (BOXMODEL_HL101)
-const char * const RC_EVENT_DEVICE[NUMBER_OF_EVENT_DEVICES] = {"/dev/input/event0", "/dev/input/event1"};
-#else
-const char * const RC_EVENT_DEVICE[NUMBER_OF_EVENT_DEVICES] = {"/dev/input/event0"};
-#endif
-#else
-//const char * const RC_EVENT_DEVICE[NUMBER_OF_EVENT_DEVICES] = {"/dev/input/nevis_ir", "/dev/input/event0"};
-const char * const RC_EVENT_DEVICE[NUMBER_OF_EVENT_DEVICES] = {"/dev/input/nevis_ir"};
-#endif
-#endif
-#endif
-#if HAVE_DUCKBOX_HARDWARE
-const char * const RC_EVENT_DEVICE[NUMBER_OF_EVENT_DEVICES] = {"/dev/input/nevis_ir", "/dev/input/nevis_fp"};
+//>>>j00zek: temporary till check all works properly
+const char * const RC_EVENT_DEVICE[2] = {"/dev/input/nevis_ir", "/dev/input/nevis_fp"};
 bool devErrorReported = false;  //to report device opening errors once and not spam logs
-#else
-const char * const RC_EVENT_DEVICE[NUMBER_OF_EVENT_DEVICES] = {"/dev/input/event0"};
-#endif
+//<<<j00zek: temporary till check all works properly end
 
 typedef struct input_event t_input_event;
 
@@ -104,6 +82,13 @@ static struct termio orig_termio;
 static bool          saved_orig_termio = false;
 #endif /* KEYBOARD_INSTEAD_OF_REMOTE_CONTROL */
 static bool input_stopped = false;
+static struct timespec devinput_mtime = { 0, 0 };
+
+#ifdef RCDEBUG
+#define d_printf printf
+#else
+#define d_printf(...)
+#endif
 
 /*********************************************************************************
 *	Constructor - opens rc-input device, selects rc-hardware and starts threads
@@ -168,13 +153,8 @@ CRCInput::CRCInput(bool &_timer_wakeup)
 		perror("[neutrino] listen failed...\n");
 		exit( -1 );
 	}
-
-	for (int i = 0; i < NUMBER_OF_EVENT_DEVICES; i++)
-	{
-		fd_rc[i] = -1;
-	}
-	clickfd = -1;
 	repeat_block = repeat_block_generic = 0;
+	checkdev();
 	open();
 	rc_last_key =  KEY_MAX;
 	firstKey = true;
@@ -184,22 +164,104 @@ CRCInput::CRCInput(bool &_timer_wakeup)
 	set_rc_hw();
 }
 
-/* if dev is given, open device with index <dev>, if not (re)open all */
-void CRCInput::open(int dev)
+bool CRCInput::checkdev()
 {
-	if (dev == -1)
-		close();
-
-	for (int i = 0; i < NUMBER_OF_EVENT_DEVICES; i++)
-	{
-		if (dev != -1) {
-			if (i != dev || fd_rc[i] != -1)
-				continue;
+	/* stat()ing the directory is fast and cheap. If a device gets added or
+	 * removed, the mtime of /dev/input/ will change, which in turn
+	 * warrants a more thorough investigation */
+	struct stat st;
+	if (stat("/dev/input/", &st) == 0) {
+		if (st.st_mtim.tv_sec != devinput_mtime.tv_sec ||
+		    st.st_mtim.tv_nsec != devinput_mtime.tv_nsec) {
+			devinput_mtime.tv_sec  = st.st_mtim.tv_sec;
+			devinput_mtime.tv_nsec = st.st_mtim.tv_nsec;
+			printf("[rcinput:%s] /dev/input mtime changed\n", __func__);
+			return true;
 		}
-		if ((fd_rc[i] = ::open(RC_EVENT_DEVICE[i], O_RDWR|O_NONBLOCK|O_CLOEXEC)) == -1)
-			if (!devErrorReported)
-				perror(RC_EVENT_DEVICE[i]);
-		//printf("CRCInput::open: %s fd %d\n", RC_EVENT_DEVICE[i], fd_rc[i]);
+		return false; /* still the same... */
+	}
+	printf("[rcinput:%s] stat /dev/input failed: %m\n", __func__);
+	return true; /* need to check anyway... */
+}
+
+bool CRCInput::checkpath(in_dev id)
+{
+	for (std::vector<in_dev>::iterator it = indev.begin(); it != indev.end(); ++it) {
+		if ((*it).path == id.path) {
+			printf("[rcinput:%s] skipping already opened %s\n", __func__, id.path.c_str());
+			return true;
+		}
+	}
+	return false;
+}
+
+/* if recheck == true, only not already opened devices are opened, if not, close then (re)open all */
+void CRCInput::open(bool recheck)
+{
+	if (recheck == false)
+		close();
+	/* close() takes the lock, too... */
+	OpenThreads::ScopedLock<OpenThreads::Mutex> m_lock(mutex);
+
+	unsigned long evbit;
+	struct in_dev id;
+	DIR *dir;
+	struct dirent *dentry;
+	dir = opendir("/dev/input");
+	if (! dir) {
+		printf("[rcinput:%s] opendir failed: %m\n", __func__);
+		return;
+	}
+
+	while ((dentry = readdir(dir)) != NULL)
+	{
+		id.path = "/dev/input/" + std::string(dentry->d_name);
+		/* hack: on hd2, the device is called "/dev/cs_ir",
+		   there are links in /dev/input: pointing to it nevis_ir and event0 (WTF???)
+		   so if nevis_ir points to cs_ir, accept it, even though it is a symlink...
+		   the rest of the code then uses coolstream specific parts if path == "nevis_ir"
+		   a better solution would be to simply mknod /dev/input/nevis_ir c 240 0, creating
+		   a second instance of /dev/cs_ir named /dv/input/nevis_ir (or to fix the driver
+		   to actually create a real input device */
+		if (dentry->d_type == DT_LNK &&
+		    id.path == "/dev/input/nevis_ir") {
+			if (readLink(id.path) != "/dev/cs_ir")
+				continue;
+		} else if (dentry->d_type != DT_CHR) {
+			d_printf("[rcinput:%s] skipping '%s'\n", __func__, dentry->d_name);
+			continue;
+		}
+		d_printf("[rcinput:%s] considering '%s'\n", __func__, dentry->d_name);
+		if (checkpath(id))
+			continue;
+		id.fd = ::open(id.path.c_str(), O_RDWR|O_NONBLOCK|O_CLOEXEC);
+		if (id.fd == -1) {
+			printf("[rcinput:%s] open %s failed: %m\n", __func__, id.path.c_str());
+			continue;
+		}
+		if (ioctl(id.fd, EVIOCGBIT(0, EV_MAX), &evbit) < 0) {
+			::close(id.fd); /* not a proper input device, e.g. /dev/input/mice */
+			continue;
+		}
+		if ((evbit & (1 << EV_KEY)) == 0) {
+			printf("[rcinput:%s] %s is bad; no EV_KEY support (0x%lx)\n", __func__, id.path.c_str(), evbit);
+			::close(id.fd);
+			continue;
+		}
+		printf("[rcinput:%s] opened %s (fd %d) ev 0x%lx\n", __func__, id.path.c_str(), id.fd, evbit);
+		indev.push_back(id);
+	}
+	closedir(dir);
+	id.path = "/tmp/neutrino.input";
+	if (! checkpath(id)) {
+		id.fd = ::open(id.path.c_str(), O_RDWR|O_NONBLOCK|O_CLOEXEC);
+		if (id.fd == -1) {
+			/* debug, because it only matters for HAVE_GENERIC_HARDWARE */
+			d_printf("[rcinput:%s] open %s failed: %m\n", __func__, id.path.c_str());
+		} else {
+			printf("[rcinput:%s] opened %s (fd %d)\n", __func__, id.path.c_str(), id.fd);
+			indev.push_back(id);
+		}
 	}
 	devErrorReported = true;
 
@@ -242,18 +304,15 @@ void CRCInput::open(int dev)
 	//+++++++++++++++++++++++++++++++++++++++
 #endif /* KEYBOARD_INSTEAD_OF_REMOTE_CONTROL */
 
-	open_click();
 	calculateMaxFd();
 }
 
 void CRCInput::close()
 {
-	for (int i = 0; i < NUMBER_OF_EVENT_DEVICES; i++) {
-		if (fd_rc[i] != -1) {
-			::close(fd_rc[i]);
-			fd_rc[i] = -1;
-		}
-	}
+	OpenThreads::ScopedLock<OpenThreads::Mutex> m_lock(mutex);
+	for (unsigned int i = 0; i < indev.size(); i++)
+		::close(indev[i].fd);
+	indev.clear();
 #ifdef KEYBOARD_INSTEAD_OF_REMOTE_CONTROL
 	if (saved_orig_termio)
 	{
@@ -275,9 +334,9 @@ void CRCInput::calculateMaxFd()
 {
 	fd_max = fd_event;
 
-	for (int i = 0; i < NUMBER_OF_EVENT_DEVICES; i++)
-		if (fd_rc[i] > fd_max)
-			fd_max = fd_rc[i];
+	for (unsigned int i = 0; i < indev.size(); i++)
+		if (indev[i].fd > fd_max)
+			fd_max = indev[i].fd;
 
 	if(fd_pipe_high_priority[0] > fd_max)
 		fd_max = fd_pipe_high_priority[0];
@@ -305,7 +364,6 @@ CRCInput::~CRCInput()
 
 	if(fd_event)
 		::close(fd_event);
-	close_click();
 }
 
 /**************************************************************************
@@ -487,8 +545,6 @@ int CRCInput::checkTimers()
 	return _id;
 }
 
-
-
 int64_t CRCInput::calcTimeoutEnd(const int timeout_in_seconds)
 {
 	return time_monotonic_us() + ((uint64_t)timeout_in_seconds * (uint64_t) 1000000);
@@ -569,7 +625,6 @@ void CRCInput::getMsg_us(neutrino_msg_t * msg, neutrino_msg_data_t * data, uint6
 	//static __u16 rc_last_key =  KEY_MAX;
 	static __u16 rc_last_repeat_key =  KEY_MAX;
 
-	struct timeval tv;
 	struct timeval tvselect;
 	uint64_t InitialTimeout = Timeout;
 	int64_t targetTimeout;
@@ -583,17 +638,14 @@ void CRCInput::getMsg_us(neutrino_msg_t * msg, neutrino_msg_data_t * data, uint6
 	 * TODO: real hot-plugging, e.g. of keyboards and triggering this loop...
 	 *       right now it is only run if some event is happening "by accident" */
 	if (!input_stopped) {
-		for (int i = 0; i < NUMBER_OF_EVENT_DEVICES; i++) {
-			if (fd_rc[i] == -1)
-				open(i);
-		}
+		if (checkdev())
+			open(true);
 	}
 
 	// wiederholung reinmachen - dass wirklich die ganze zeit bis timeout gewartet wird!
 	uint64_t getKeyBegin = time_monotonic_us();
 
 	while(1) {
-		/* we later check for ev.type = EV_SYN which is 0x00, so set something invalid here... */
 		timer_id = 0;
 		if ( !timers.empty() )
 		{
@@ -621,10 +673,10 @@ void CRCInput::getMsg_us(neutrino_msg_t * msg, neutrino_msg_data_t * data, uint6
 		tvselect.tv_usec = targetTimeout%1000000;
 
 		FD_ZERO(&rfds);
-		for (int i = 0; i < NUMBER_OF_EVENT_DEVICES; i++)
+		for (unsigned int i = 0; i < indev.size(); i++)
 		{
-			if (fd_rc[i] != -1)
-				FD_SET(fd_rc[i], &rfds);
+			if (indev[i].fd != -1)
+				FD_SET(indev[i].fd, &rfds);
 		}
 #ifdef KEYBOARD_INSTEAD_OF_REMOTE_CONTROL
 		if (true)
@@ -1260,20 +1312,40 @@ void CRCInput::getMsg_us(neutrino_msg_t * msg, neutrino_msg_data_t * data, uint6
 			}
 		}
 
-		for (int i = 0; i < NUMBER_OF_EVENT_DEVICES; i++) {
-			if ((fd_rc[i] != -1) && (FD_ISSET(fd_rc[i], &rfds))) {
+		for (std::vector<in_dev>::iterator i = indev.begin(); i != indev.end(); ++i) {
+			if (((*i).fd != -1) && (FD_ISSET((*i).fd, &rfds))) {
+				uint64_t now_pressed = 0;
 				t_input_event ev;
-				int ret = read(fd_rc[i], &ev, sizeof(t_input_event));
+				memset(&ev, 0, sizeof(ev));
+				/* we later check for ev.type = EV_SYN = 0x00, so set something invalid here... */
+				ev.type = EV_MAX;
+				int ret = read((*i).fd, &ev, sizeof(t_input_event));
 				if (ret != sizeof(t_input_event)) {
 					if (errno == ENODEV) {
 						/* hot-unplugged? */
-						::close(fd_rc[i]);
-						fd_rc[i] = -1;
+						::close((*i).fd);
+						indev.erase(i);
 					}
 					continue;
 				}
 				if (ev.type == EV_SYN)
 					continue; /* ignore... */
+				if (ev.value) {
+					/* try to compensate for possible changes in wall clock
+					 * kernel ev.time default uses CLOCK_REALTIME, as does gettimeofday().
+					 * so subtract gettimeofday() from ev.time and then add
+					 * CLOCK_MONOTONIC, which is supposed to not change with settimeofday.
+					 * Everything would be much easier if we could use the post-kernel 3.4
+					 * EVIOCSCLOCKID ioctl :-) */
+					struct timespec t1;
+					now_pressed = ev.time.tv_usec + ev.time.tv_sec * 1000000ULL;
+					if (!clock_gettime(CLOCK_MONOTONIC, &t1)) {
+						struct timeval t2;
+						gettimeofday(&t2, NULL);
+						now_pressed += t1.tv_sec * 1000000ULL + t1.tv_nsec / 1000;
+						now_pressed -= (t2.tv_usec + t2.tv_sec * 1000000ULL);
+					}
+				}
 				SHTDCNT::getInstance()->resetSleepTimer();
 				if (ev.value && firstKey) {
 					firstKey = false;
@@ -1281,9 +1353,7 @@ void CRCInput::getMsg_us(neutrino_msg_t * msg, neutrino_msg_data_t * data, uint6
 				}
 
 				uint32_t trkey = translate(ev.code);
-#ifdef _DEBUG
-				printf("%d key: %04x value %d, translate: %04x -%s-\n", ev.value, ev.code, ev.value, trkey, getKeyName(trkey).c_str());
-#endif
+				d_printf("key: %04x value %d, translate: %04x -%s-\n", ev.code, ev.value, trkey, getKeyName(trkey).c_str());
 				if (trkey == RC_nokey)
 					continue;
 
@@ -1317,9 +1387,7 @@ void CRCInput::getMsg_us(neutrino_msg_t * msg, neutrino_msg_data_t * data, uint6
 				}
 
 				if (ev.value) {
-#ifdef RCDEBUG
-					printf("rc_last_key %04x rc_last_repeat_key %04x\n\n", rc_last_key, rc_last_repeat_key);
-#endif
+					d_printf("rc_last_key %04x rc_last_repeat_key %04x\n\n", rc_last_key, rc_last_repeat_key);
 					if (*timer_wakeup) {
 						unlink("/tmp/.timer_wakeup");
 						*timer_wakeup = false;
@@ -1329,15 +1397,17 @@ void CRCInput::getMsg_us(neutrino_msg_t * msg, neutrino_msg_data_t * data, uint6
 #endif
 						CTimerManager::getInstance()->cancelShutdownOnWakeup();
 					}
-					uint64_t now_pressed;
 					bool keyok = true;
-
-					tv = ev.time;
-					now_pressed = (uint64_t) tv.tv_usec + (uint64_t)((uint64_t) tv.tv_sec * (uint64_t) 1000000);
 					if (trkey == rc_last_key) {
 						/* only allow selected keys to be repeated */
 						if (mayRepeat(trkey, bAllowRepeatLR) ||
-							(g_settings.shutdown_real_rcdelay && ((trkey == RC_standby) && (g_info.hw_caps->can_shutdown))))
+						    (g_settings.shutdown_real_rcdelay && ((trkey == RC_standby) &&
+#if HAVE_COOL_HARDWARE
+						    (cs_get_revision() > 7)
+#else
+						    (g_info.hw_caps->can_shutdown)
+#endif
+						)))
 						{
 #ifdef ENABLE_REPEAT_CHECK
 							if (rc_last_repeat_key != trkey) {
@@ -1375,8 +1445,6 @@ void CRCInput::getMsg_us(neutrino_msg_t * msg, neutrino_msg_data_t * data, uint6
 							}
 							*msg = trkey;
 							*data = 0; /* <- button pressed */
-							if(g_settings.key_click)
-								play_click();
 							return;
 						}
 					} /*if keyok */
@@ -1450,11 +1518,11 @@ void CRCInput::clearRCMsg()
 {
 	t_input_event ev;
 
-	for (int i = 0; i < NUMBER_OF_EVENT_DEVICES; i++)
+	for (unsigned int i = 0; i < indev.size(); i++)
 	{
-		if (fd_rc[i] != -1)
+		if (indev[i].fd != -1)
 		{
-			while (read(fd_rc[i], &ev, sizeof(t_input_event)) == sizeof(t_input_event))
+			while (read(indev[i].fd, &ev, sizeof(t_input_event)) == sizeof(t_input_event))
 				;
 		}
 	}
@@ -1591,7 +1659,11 @@ const char * CRCInput::getSpecialKeyName(const unsigned int key)
 			case RC_timeshift:
 				return "timeshift";
 			case RC_mode:
+#if HAVE_SPARK_HARDWARE
+				return "v.format";
+#else
 				return "mode";
+#endif
 			case RC_record:
 				return "record";
 			case RC_pause:
@@ -1622,8 +1694,44 @@ const char * CRCInput::getSpecialKeyName(const unsigned int key)
 				return "analog off";
 			case RC_www:
 				return "www";
+			case RC_find:
+				return "find";
+			case RC_pip:
+				return "pip";
+			case RC_archive:
+				return "archive";
+			case RC_slow:
+				return "slow";
+			case RC_fastforward:
+				return "fast";
 			case RC_playmode:
 				return "play mode";
+			case RC_usb:
+				return "usb";
+			case RC_timer:
+				return "time";
+			case RC_f1:
+				return "f1";
+			case RC_f2:
+				return "f2";
+			case RC_f3:
+				return "f3";
+			case RC_f4:
+				return "f4";
+			case RC_prog1:
+				return "prog1";
+			case RC_prog2:
+				return "prog2";
+			case RC_prog3:
+				return "prog3";
+			case RC_aux:
+#if HAVE_SPARK_HARDWARE
+				return "tv/sat";
+#else
+				return "aux";
+#endif
+			case RC_prog4:
+				return "prog4";
 			case RC_sub:
 				return "sub";
 			case RC_pos:
@@ -1641,8 +1749,6 @@ const char * CRCInput::getSpecialKeyName(const unsigned int key)
 				return "pvr";
 			case RC_list:
 				return "list";
-			case RC_archive:
-				return "archiv";
 			case RC_search:
 				return "search";
 			default:
@@ -1673,8 +1779,14 @@ const char *CRCInput::getKeyNameC(const unsigned int key)
 **************************************************************************/
 int CRCInput::translate(int code)
 {
+	if (code == g_settings.key_help)
+		return RC_help;
 	switch(code)
 	{
+		case KEY_EXIT:
+			return RC_home;
+		case KEY_FASTFORWARD:
+			return RC_forward;
 		case 0x100: // FIXME -- needed?
 			return RC_up;
 		case 0x101: // FIXME -- needed?
@@ -1698,36 +1810,63 @@ int CRCInput::translate(int code)
 	return (int)RC_nokey;
 }
 
-void CRCInput::close_click()
+void CRCInput::setKeyRepeatDelay(unsigned int start_ms, unsigned int repeat_ms)
 {
-}
-
-void CRCInput::open_click()
-{
-}
-#if 0 
-//never used
-void CRCInput::reset_dsp(int /*rate*/)
-{
-}
-
-void CRCInput::set_dsp()
-{
-}
+	for (std::vector<in_dev>::iterator it = indev.begin(); it != indev.end(); ++it) {
+		int fd = (*it).fd;
+		std::string path = (*it).path;
+		if (path == "/tmp/neutrino.input")
+			continue; /* setting repeat rate does not work here */
+#ifdef BOXMODEL_CS_HD1
+		/* this is ugly, but the driver does not support anything advanced... */
+		if (path == "/dev/input/nevis_ir") {
+			d_printf("[rcinput:%s] %s(fd %d) using proprietary ioctl\n", __func__, path.c_str(), fd);
+			ioctl(fd, IOC_IR_SET_F_DELAY, start_ms);
+			ioctl(fd, IOC_IR_SET_X_DELAY, repeat_ms);
+			continue;
+		}
 #endif
-void CRCInput::play_click()
-{
-}
+		d_printf("[rcinput:%s] %s(fd %d) writing EV_REP (%d->%d)\n",
+				__func__, path.c_str(), fd, start_ms, repeat_ms);
+		/* if we have a good input device, we don't need the private ioctl above */
+		struct input_event ie;
+		memset(&ie, 0, sizeof(ie));
+		ie.type = EV_REP;
+		/* increase by 10 ms to trick the repeat checker code in the
+		 * rcinput loop into accepting the key event... */
+		ie.value = start_ms + 10;
+		ie.code = REP_DELAY;
+		if (write(fd, &ie, sizeof(ie)) == -1)
+			printf("[rcinput:%s] %s(fd %d) write %s: %m\n", __func__, path.c_str(), fd, "REP_DELAY");
 
+		ie.value = repeat_ms + 10;
+		ie.code = REP_PERIOD;
+		if (write(fd, &ie, sizeof(ie)) == -1)
+			printf("[rcinput:%s] %s(fd %d) write %s: %m\n", __func__, path.c_str(), fd, "REP_PERIOD");
+	}
+}
 
 #ifdef IOC_IR_SET_PRI_PROTOCOL
 // hint: ir_protocol_t and other useful things are defined in cs_ir_generic.h
 void CRCInput::set_rc_hw(ir_protocol_t ir_protocol, unsigned int ir_address)
 {
 	int ioctl_ret = -1;
-
-	//fixme?: for now fd_rc[] is hardcoded to 0 since only fd_rc[0] is used at the moment
-	ioctl_ret = ::ioctl(fd_rc[0], IOC_IR_SET_PRI_PROTOCOL, ir_protocol);
+	if (indev.empty()) {
+		printf("[rcinput:%s] indev is empty!\n", __func__);
+		return;
+	}
+	int fd = -1;
+	for (std::vector<in_dev>::iterator it = indev.begin(); it != indev.end(); ++it) {
+		if ((*it).path == "/dev/input/nevis_ir") {
+			fd = (*it).fd;
+			break;
+		}
+	}
+	if (fd == -1) {
+		printf("[rcinput:%s] no nevis_ir input device found??\n", __func__);
+		return;
+	}
+	ioctl_ret = ::ioctl(fd, IOC_IR_SET_PRI_PROTOCOL, ir_protocol);
 	if(ioctl_ret < 0)
 		perror("IOC_IR_SET_PRI_PROTOCOL");
 	else
@@ -1737,7 +1876,7 @@ void CRCInput::set_rc_hw(ir_protocol_t ir_protocol, unsigned int ir_address)
 	if(ir_address > 0)
 	{
 		//fixme?: for now fd_rc[] is hardcoded to 0 since only fd_rc[0] is used at the moment
-		ioctl_ret = ::ioctl(fd_rc[0], IOC_IR_SET_PRI_ADDRESS, ir_address);
+		ioctl_ret = ::ioctl(fd, IOC_IR_SET_PRI_ADDRESS, ir_address);
 		if(ioctl_ret < 0)
 			perror("IOC_IR_SET_PRI_ADDRESS");
 		else

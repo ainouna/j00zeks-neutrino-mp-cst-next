@@ -39,6 +39,9 @@
 #include <string>
 #include <vector>
 
+#include <OpenThreads/Mutex>
+#include <OpenThreads/ScopedLock>
+
 #ifdef BOXMODEL_CS_HD2
 #ifdef HAVE_COOLSTREAM_CS_IR_GENERIC_H
 #include <cs_ir_generic.h>
@@ -138,6 +141,12 @@ class CRCInput
 			bool			correct_time;
 		};
 
+		struct in_dev
+		{
+			int fd;
+			std::string path;
+		};
+
 		uint32_t               timerid;
 		std::vector<timer> timers;
 
@@ -147,38 +156,19 @@ class CRCInput
 		int 		fd_pipe_high_priority[2];
 		int 		fd_pipe_low_priority[2];
 		int         	fd_gamerc;
-#if 0
-#if HAVE_SPARK_HARDWARE
-#define NUMBER_OF_EVENT_DEVICES 1
-#else
-#ifdef HAVE_DUCKBOX_HARDWARE
-#if defined (BOXMODEL_IPBOX9900) || defined (BOXMODEL_IPBOX99) || defined (BOXMODEL_IPBOX55) || defined (BOXMODEL_HL101)
-#define NUMBER_OF_EVENT_DEVICES 2
-#else
-#define NUMBER_OF_EVENT_DEVICES 1
-#endif
-#else
-#define NUMBER_OF_EVENT_DEVICES 1
-#endif
-#endif
-#endif
-#ifdef HAVE_DUCKBOX_HARDWARE
-#define NUMBER_OF_EVENT_DEVICES 2
-#else
-#define NUMBER_OF_EVENT_DEVICES 1
-#endif
-
-		int         	fd_rc[NUMBER_OF_EVENT_DEVICES];
+		int         	fd_rc[2]; //j00zek: temporary till the full check all is working
+		std::vector<in_dev> indev;
 		int		fd_keyb;
 		int		fd_event;
 
 		int		fd_max;
-		int		clickfd;
 		bool		*timer_wakeup;
 		__u16 rc_last_key;
-		void set_dsp();
+		OpenThreads::Mutex mutex;
 
-		void open(int dev = -1);
+		void open(bool recheck = false);
+		bool checkpath(in_dev id);
+		bool checkdev();
 		void close();
 		int translate(int code);
 		void calculateMaxFd(void);
@@ -219,11 +209,7 @@ class CRCInput
 			RC_plus		= KEY_VOLUMEUP,     /* /include/linux/input.h: #define KEY_VOLUMEUP		115   */
 			RC_standby	= KEY_POWER,	    /* /include/linux/input.h: #define KEY_POWER		116   */
 			RC_help		= KEY_HELP,	    /* /include/linux/input.h: #define KEY_HELP			138   */
-#if HAVE_SPARK_HARDWARE || HAVE_DUCKBOX_HARDWARE
-			RC_home		= KEY_HOME,     /* /include/linux/input.h: #define KEY_HOME			102   */
-#else
-			RC_home		= KEY_EXIT,	    /* /include/linux/input.h: #define KEY_HOME			102   */
-#endif
+			RC_home		= KEY_HOME,	    /* /include/linux/input.h: #define KEY_HOME			102   */
 			RC_setup	= KEY_MENU,	    /* /include/linux/input.h: #define KEY_SETUP		141   */
 			RC_topleft	= KEY_TOPLEFT,	
 			RC_topright	= KEY_TOPRIGHT,	
@@ -253,18 +239,10 @@ class CRCInput
 			RC_record	= KEY_RECORD,
 			RC_play		= KEY_PLAY,
 			RC_pause	= KEY_PAUSE,
-#if HAVE_SPARK_HARDWARE || HAVE_DUCKBOX_HARDWARE /* evremote don't use forward */
-			RC_forward	= KEY_FASTFORWARD,
-#else
 			RC_forward	= KEY_FORWARD,
-#endif
-			/* media/portal and archiv/media keys ufs912/ufs913 */
-			RC_archive	= KEY_ARCHIVE,
-			RC_search	= KEY_SEARCH,
-
 			RC_rewind	= KEY_REWIND,
 			RC_stop		= KEY_STOP,
-			RC_timeshift	= KEY_TIME,
+			RC_timeshift	= KEY_T,
 			RC_mode		= KEY_MODE,
 			RC_games	= KEY_GAMES,
 			RC_next		= KEY_NEXT,
@@ -273,7 +251,23 @@ class CRCInput
 			RC_sub		= KEY_SUBTITLE,
 			RC_pos		= KEY_MOVE,
 			RC_sleep	= KEY_SLEEP,
+			RC_find		= KEY_FIND,
+			RC_pip		= KEY_PRESENTATION,
+			RC_archive	= KEY_ARCHIVE,
+			RC_fastforward	= KEY_FASTFORWARD,
+			RC_slow		= KEY_SLOW,
 			RC_playmode	= KEY_P,
+			RC_usb		= KEY_CLOSE,
+			RC_f1		= KEY_F1,
+			RC_f2		= KEY_F2,
+			RC_f3		= KEY_F3,
+			RC_f4		= KEY_F4,
+			RC_prog1	= KEY_PROG1,
+			RC_prog2	= KEY_PROG2,
+			RC_prog3	= KEY_PROG3,
+			RC_prog4	= KEY_PROG4,
+			RC_media	= KEY_MEDIA,
+			RC_search	= KEY_SEARCH,
 
 			RC_power_on	= KEY_POWERON,
 			RC_power_off	= KEY_POWEROFF,
@@ -296,7 +290,6 @@ class CRCInput
 
 			/* nbox remote keys */
 			RC_option	= KEY_OPTION,
-			RC_media	= KEY_MEDIA, // also in ufs912/ufs913
 			RC_n		= KEY_GOTO,
 			RC_pvr		= KEY_PVR,
 			RC_list		= KEY_LIST,
@@ -315,10 +308,6 @@ class CRCInput
 		};
 		void set_rc_hw(void);
 
-		inline int getFileHandle(void) /* used for plugins (i.e. games) only */
-		{
-			return fd_rc[0];
-		}
 		void stopInput(const bool ext = false);
 		void restartInput(const bool ext = false);
 		bool isLocked(void);
@@ -357,12 +346,9 @@ class CRCInput
 		void clearRCMsg();
 
 		int messageLoop( bool anyKeyCancels = false, int timeout= -1 );
-		void open_click();
-		void close_click();
-		void play_click();
-		void reset_dsp(int rate);
 
 		void setLongPressAny(bool b) { longPressAny = b; };
+		void setKeyRepeatDelay(unsigned int start_ms, unsigned int repeat_ms);
 };
 
 

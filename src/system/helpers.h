@@ -116,7 +116,9 @@ class CFileHelpers
 		static uint64_t getDirSize(const std::string& dir){return getDirSize(dir.c_str());};
 };
 
+#if 0
 uint32_t GetWidth4FB_HW_ACC(const uint32_t _x, const uint32_t _w, const bool max=true);
+#endif
 
 #if __cplusplus < 201103L
 std::string to_string(int);
@@ -146,6 +148,7 @@ bool split_config_string(const std::string &str, std::map<std::string,std::strin
 
 std::string getJFFS2MountPoint(int mtdPos);
 std::string Lang2ISO639_1(std::string& lang);
+std::string readLink(std::string lnk);
 
 bool    File_copy(std::string rstr, std::string wstr); 
 int    getpidof(const char *process); 

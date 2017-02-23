@@ -329,6 +329,11 @@ static SNeutrinoSettings::usermenu_t usermenu_default[] = {
 	{ CRCInput::RC_blue,            "12,11,20,21,19,14,29,30,15",           "",     "blue"          },
 	{ CRCInput::RC_play,            "9",                                    "",     "5"             },
 	{ CRCInput::RC_audio,           "27",                                   "",     "6"             },
+#if HAVE_SPARK_HARDWARE
+	{ CRCInput::RC_timer,           "19",                                   "",     "7"             },
+	{ CRCInput::RC_usb,             "31",                                   "",     "6"             },
+	{ CRCInput::RC_archive,         "30",                                   "",     "4"             },
+#endif
 	{ CRCInput::RC_nokey,           "",                                     "",     ""              },
 };
 
@@ -2769,7 +2774,7 @@ void CNeutrinoApp::RealRun()
 				m_idletime = time(NULL);
 				if (m_screensaver)
 				{
-					printf("[neutrino] CSreenSaver stop; msg: %lX\n", msg);
+					printf("[neutrino] CScreenSaver stop; msg: %lX\n", msg);
 					screensaver(false);
 
 					frameBuffer->stopFrame();
@@ -5020,7 +5025,6 @@ void CNeutrinoApp::loadKeys(const char * fname)
 
 	/* options */
 	g_settings.menu_left_exit = tconfig.getInt32( "menu_left_exit", 0 );
-	g_settings.key_click = tconfig.getInt32( "key_click", 1 );
 	g_settings.repeat_blocker = tconfig.getInt32("repeat_blocker", 450);
 	g_settings.repeat_genericblocker = tconfig.getInt32("repeat_genericblocker", 100);
 	g_settings.longkeypress_duration = tconfig.getInt32("longkeypress_duration", LONGKEYPRESS_OFF);
@@ -5109,7 +5113,6 @@ void CNeutrinoApp::saveKeys(const char * fname)
 	tconfig.setInt32( "key_pic_size_active", g_settings.key_pic_size_active );
 
 	tconfig.setInt32( "menu_left_exit", g_settings.menu_left_exit );
-	tconfig.setInt32( "key_click", g_settings.key_click );
 	tconfig.setInt32( "repeat_blocker", g_settings.repeat_blocker );
 	tconfig.setInt32( "repeat_genericblocker", g_settings.repeat_genericblocker );
 	tconfig.setInt32( "longkeypress_duration", g_settings.longkeypress_duration );

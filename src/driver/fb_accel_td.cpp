@@ -156,6 +156,7 @@ void CFbAccelTD::init(const char *)
 	lbb = lfb;	/* the memory area to draw to... */
 	available = fix.smem_len;
 	stride = fix.line_length;
+	swidth = stride / sizeof(fb_pixel_t);
 	xRes = screeninfo.xres;
 	yRes = screeninfo.yres;
 	bpp  = screeninfo.bits_per_pixel;
@@ -169,7 +170,7 @@ int CFbAccelTD::setMode(unsigned int, unsigned int, unsigned int)
 	int needmem = stride * yRes * 2;
 	if (available >= needmem)
 	{
-		backbuffer = lfb + stride / sizeof(fb_pixel_t) * yRes;
+		backbuffer = lfb + swidth * yRes;
 		return 0;
 	}
 	fprintf(stderr, LOGTAG " not enough FB memory (have %d, need %d)\n", available, needmem);
@@ -201,4 +202,9 @@ void CFbAccelTD::setBlendLevel(int level)
 	ioctl(gfxfd, STB04GFX_OSD_SETCONTROL, &g);
 	if (level == 100) // sucks
 		usleep(20000);
+}
+
+fb_pixel_t *CFbAccelTD::getBackBufferPointer() const
+{
+	return backbuffer;
 }
