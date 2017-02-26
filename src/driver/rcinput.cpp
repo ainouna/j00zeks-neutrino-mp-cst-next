@@ -219,10 +219,11 @@ void CRCInput::open(bool recheck)
 		/* hack: on hd2, the device is called "/dev/cs_ir",
 		   there are links in /dev/input: pointing to it nevis_ir and event0 (WTF???)
 		   so if nevis_ir points to cs_ir, accept it, even though it is a symlink...
-		   the rest of the code then uses coolstream specific parts if path == "nevis_ir"
 		   a better solution would be to simply mknod /dev/input/nevis_ir c 240 0, creating
-		   a second instance of /dev/cs_ir named /dv/input/nevis_ir (or to fix the driver
-		   to actually create a real input device */
+		   a second instance of /dev/cs_ir named /dev/input/nevis_ir (or to fix the driver
+		   to actually create a real event0 device via udev)
+		   Note: i'm deliberately not using event0, because this might be replaced by a "real"
+		   event0 device if e.g. an USB keyboard is plugged in*/
 		if (dentry->d_type == DT_LNK &&
 		    id.path == "/dev/input/nevis_ir") {
 			if (readLink(id.path) != "/dev/cs_ir")
@@ -1330,21 +1331,19 @@ void CRCInput::getMsg_us(neutrino_msg_t * msg, neutrino_msg_data_t * data, uint6
 				}
 				if (ev.type == EV_SYN)
 					continue; /* ignore... */
-				if (ev.value) {
-					/* try to compensate for possible changes in wall clock
-					 * kernel ev.time default uses CLOCK_REALTIME, as does gettimeofday().
-					 * so subtract gettimeofday() from ev.time and then add
-					 * CLOCK_MONOTONIC, which is supposed to not change with settimeofday.
-					 * Everything would be much easier if we could use the post-kernel 3.4
-					 * EVIOCSCLOCKID ioctl :-) */
-					struct timespec t1;
-					now_pressed = ev.time.tv_usec + ev.time.tv_sec * 1000000ULL;
-					if (!clock_gettime(CLOCK_MONOTONIC, &t1)) {
-						struct timeval t2;
-						gettimeofday(&t2, NULL);
-						now_pressed += t1.tv_sec * 1000000ULL + t1.tv_nsec / 1000;
-						now_pressed -= (t2.tv_usec + t2.tv_sec * 1000000ULL);
-					}
+				/* try to compensate for possible changes in wall clock
+				 * kernel ev.time default uses CLOCK_REALTIME, as does gettimeofday().
+				 * so subtract gettimeofday() from ev.time and then add
+				 * CLOCK_MONOTONIC, which is supposed to not change with settimeofday.
+				 * Everything would be much easier if we could use the post-kernel 3.4
+				 * EVIOCSCLOCKID ioctl :-) */
+				struct timespec t1;
+				now_pressed = ev.time.tv_usec + ev.time.tv_sec * 1000000ULL;
+				if (!clock_gettime(CLOCK_MONOTONIC, &t1)) {
+					struct timeval t2;
+					gettimeofday(&t2, NULL);
+					now_pressed += t1.tv_sec * 1000000ULL + t1.tv_nsec / 1000;
+					now_pressed -= (t2.tv_usec + t2.tv_sec * 1000000ULL);
 				}
 				SHTDCNT::getInstance()->resetSleepTimer();
 				if (ev.value && firstKey) {
