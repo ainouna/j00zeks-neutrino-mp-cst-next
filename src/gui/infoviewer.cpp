@@ -2289,10 +2289,15 @@ void CInfoViewer::killTitle()
 		if (sigbox)
 			sigbox->kill();
 #endif
-		if (header) header->kill();
-#if 1 //not really required to kill clock, header does this
+		if (header)
+      header->kill();
+#if 1 //not really required to kill clock, header does this  <--- really ????
 		if (clock)
+		{
 			clock->kill();
+			delete clock;
+			clock = NULL;
+		}
 #endif
 		if (body)
       body->kill();
@@ -2585,8 +2590,11 @@ void CInfoViewer::ResetModules(bool kill)
 	body = NULL;
 	delete infobar_txt;
 	infobar_txt = NULL;
-	delete clock;
-	clock = NULL;
+	if (clock)
+	{
+		delete clock;
+		clock = NULL;
+	}
 	delete txt_cur_start;
 	txt_cur_start = NULL;
 	delete txt_cur_event;
