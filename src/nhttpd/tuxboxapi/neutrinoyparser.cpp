@@ -845,119 +845,27 @@ std::string  CNeutrinoYParser::func_get_partition_list(CyhookHandler *, std::str
 //-------------------------------------------------------------------------
 std::string CNeutrinoYParser::func_get_boxtype(CyhookHandler *, std::string)
 {
-#if HAVE_SPARK_HARDWARE || HAVE_DUCKBOX_HARDWARE
-	std::string boxname = string(g_info.hw_caps->boxvendor) + " " + string(g_info.hw_caps->boxname);
-#else
-	unsigned int system_rev = cs_get_revision();
-	std::string boxname = "CST ";
+	std::string boxvendor(g_info.hw_caps->boxvendor);
+	/*
+	   I don't know the current legal situation.
+	   So better let's change the vendor's name to CST.
 
-#if HAVE_TRIPLEDRAGON
-	boxname = "Armas ";
-#endif
+	   After change this, you'll have to align code in Y_Blocks.txt
+	*/
+	if (boxvendor.compare("Coolstream") == 0)
+		boxvendor = "CST";
 
-	switch(system_rev)
-	{
-		case 1:
-			if( boxname == "Armas ")
-				boxname += "TripleDragon";
-			break;
-#ifdef BOXMODEL_CS_HD1
-		case 6:
-			boxname += "HD1";
-			break;
-		case 7:
-			boxname += "BSE";
-			break;
-		case 8:
-			boxname += "Neo";
-			if (CFEManager::getInstance()->getFrontendCount() > 1)
-				boxname += " Twin";
-			break;
-		case 10:
-			boxname += "Zee";
-			break;
-#endif
-#ifdef BOXMODEL_CS_HD2
-		case 9:
-			boxname += "Tank";
-			break;
-		case 11:
-			boxname += "Trinity";
-			if (cs_get_chip_type() != 33904 /*0x8470*/)
-				boxname += " V2";
-			break;
-		case 12:
-			boxname += "Zee2";
-			break;
-		case 13:
-			boxname += "Link";
-			break;
-		case 14:
-			boxname += "Trinity Duo";
-			break;
-#endif
-		default:
-			char buffer[10];
-			snprintf(buffer, sizeof(buffer), "%u\n", system_rev);
-			boxname += "Unknown nr. ";
-			boxname += buffer;
-			break;
-	}
+	std::string boxname(g_info.hw_caps->boxname);
 
-#endif
-#if BOXMODEL_UFS910
-	boxname = "ufs910";
-#endif
-#if BOXMODEL_UFS922
-	boxname = "ufs922";
-#endif
-#if BOXTYPE_SPARK
-	boxname = "spark";
-#endif
-#if BOXMODEL_SPARK7162
-	boxname = "spark7162";
-#endif
-	return boxname;
+
+	return boxvendor + " " + boxname;
 }
 //-------------------------------------------------------------------------
 // y-func : get boxmodel
 //-------------------------------------------------------------------------
 std::string CNeutrinoYParser::func_get_boxmodel(CyhookHandler *, std::string)
 {
-	unsigned int system_rev = cs_get_revision();
-	std::string boxmodel = "Unknown";
-
-	switch(system_rev)
-	{
-#ifdef BOXMODEL_CS_HD1
-		case 6:
-		case 7:
-		case 8:
-		case 10:
-			boxmodel = "Nevis";
-			break;
-#endif
-#ifdef BOXMODEL_CS_HD2
-		case 9:
-			boxmodel = "Apollo";
-			break;
-		case 11:
-			if (cs_get_chip_type() == 33904 /*0x8470*/)
-				boxmodel = "Shiner";
-			else
-				boxmodel = "Kronos";
-			break;
-		case 12:
-		case 13:
-		case 14:
-			boxmodel = "Kronos";
-			break;
-#endif
-		default:
-			break;
-	}
-
-	return boxmodel;
+	return g_info.hw_caps->boxarch;
 }
 //-------------------------------------------------------------------------
 // y-func : get stream info

@@ -3,7 +3,7 @@
 	Copyright (C) 2001 by Steffen Hehn 'McClean'
 
 	Classes for generic GUI-related components.
-	Copyright (C) 2013-2014, Thilo Graf 'dbt'
+	Copyright (C) 2013-2017, Thilo Graf 'dbt'
 
 	License: GPL
 
@@ -102,7 +102,7 @@ void CComponentsFooter::initVarFooter(	const int& x_pos, const int& y_pos, const
 	initParent(parent);
 }
 
-void CComponentsFooter::setButtonLabels(const struct button_label_s * const content, const size_t& label_count, const int& chain_width, const int& label_width)
+void CComponentsFooter::setButtonLabels(const struct button_label_cc * const content, const size_t& label_count, const int& chain_width, const int& label_width)
 {
 	/* clean up before init*/
 	if (chain)
@@ -178,7 +178,7 @@ void CComponentsFooter::setButtonLabels(const struct button_label_s * const cont
 	vector<CComponentsItem*> v_btns;
 	int h_btn = /*(ccf_enable_button_bg ? */chain->getHeight()-2*fr_thickness/*-OFFSET_INNER_SMALL*//* : height)*/-ccf_button_shadow_width;
 	for (size_t i= 0; i< label_count; i++){
-		string txt 		= content[i].text;
+		string txt 		= content[i].locale == NONEXISTANT_LOCALE ? content[i].text : g_Locale->getText(content[i].locale);
 		string icon_name 	= string(content[i].button);
 
 		//ignore item, if no text and icon are defined;
@@ -192,8 +192,7 @@ void CComponentsFooter::setButtonLabels(const struct button_label_s * const cont
 		CComponentsButton *btn = new CComponentsButton(0, y_btn, w_btn, h_btn, txt, icon_name, NULL, false, true, ccf_enable_button_shadow);
 
 		btn->doPaintBg(ccf_enable_button_bg);
-		btn->setButtonDirectKey(content[i].directKey);
-		btn->setButtonDirectKeyA(content[i].directKeyAlt);
+		btn->setButtonDirectKeys(content[i].directKeys);
 		btn->setButtonResult(content[i].btn_result);
 		btn->setButtonAlias(content[i].btn_alias);
 		btn->setButtonFont(ccf_btn_font);
@@ -244,65 +243,32 @@ void CComponentsFooter::setButtonLabels(const struct button_label_s * const cont
 	}
 }
 
-void CComponentsFooter::setButtonLabels(const struct button_label_l * const content, const size_t& label_count, const int& chain_width, const int& label_width)
-{
-	button_label_s buttons[label_count];
-	
-	for (size_t i= 0; i< label_count; i++){
-		buttons[i].button = content[i].button;
-		buttons[i].text = content[i].locale != NONEXISTANT_LOCALE ? g_Locale->getText(content[i].locale) : "";
-		buttons[i].directKey = content[i].directKey;
-		buttons[i].directKeyAlt = content[i].directKeyAlt;
-		buttons[i].btn_result = content[i].btn_result;
-		buttons[i].btn_alias = content[i].btn_alias;
-	}
-
-	setButtonLabels(buttons, label_count, chain_width, label_width);
-}
-
 void CComponentsFooter::setButtonLabels(const struct button_label * const content, const size_t& label_count, const int& chain_width, const int& label_width)
 {
 	//conversion for compatibility with older paintButtons() methode, find in /gui/widget/buttons.h
-	button_label_l buttons[label_count];
+	button_label_cc buttons[label_count];
 	for (size_t i = 0; i< label_count; i++){
 		buttons[i].button = content[i].button;
 		buttons[i].locale = content[i].locale;
 		//NOTE: here are used default values, because old button label struct don't know about this,
 		//if it possible, don't use this methode!
-		buttons[i].directKey = buttons[i].directKeyAlt = CRCInput::RC_nokey;
+		buttons[i].directKeys.push_back(CRCInput::RC_nokey);
 		buttons[i].btn_result = -1;
 		buttons[i].btn_alias = -1;
 	}
 	setButtonLabels(buttons, label_count, chain_width, label_width);
 }
 
-void CComponentsFooter::setButtonLabels(const vector<button_label_l> &v_content, const int& chain_width, const int& label_width)
+void CComponentsFooter::setButtonLabels(const vector<button_label_cc> &v_content, const int& chain_width, const int& label_width)
 {
 	size_t label_count = v_content.size();
-	button_label_l buttons[label_count];
-
-	for (size_t i= 0; i< label_count; i++){
-		buttons[i].button = v_content[i].button;
-		buttons[i].locale = v_content[i].locale;
-		buttons[i].directKey = v_content[i].directKey;
-		buttons[i].directKeyAlt = v_content[i].directKeyAlt;
-		buttons[i].btn_result = v_content[i].btn_result;
-		buttons[i].btn_alias = v_content[i].btn_alias;
-	}
-
-	setButtonLabels(buttons, label_count, chain_width, label_width);
-}
-
-void CComponentsFooter::setButtonLabels(const vector<button_label_s> &v_content, const int& chain_width, const int& label_width)
-{
-	size_t label_count = v_content.size();
-	button_label_s buttons[label_count];
+	button_label_cc buttons[label_count];
 
 	for (size_t i= 0; i< label_count; i++){
 		buttons[i].button = v_content[i].button;
 		buttons[i].text = v_content[i].text;
-		buttons[i].directKey = v_content[i].directKey;
-		buttons[i].directKeyAlt = v_content[i].directKeyAlt;
+		buttons[i].locale = v_content[i].locale;
+		buttons[i].directKeys = v_content[i].directKeys;
 		buttons[i].btn_result = v_content[i].btn_result;
 		buttons[i].btn_alias = v_content[i].btn_alias;
 	}
@@ -316,15 +282,13 @@ void CComponentsFooter::setButtonLabel(	const char *button_icon,
 					const int& label_width,
 					const neutrino_msg_t& msg,
 					const int& result_value,
-					const int& alias_value,
-					const neutrino_msg_t& directKeyAlt)
+					const int& alias_value)
 {
-	button_label_s button[1];
+	button_label_cc button[1];
 
 	button[0].button = button_icon;
 	button[0].text = text;
-	button[0].directKey = msg;
-	button[0].directKeyAlt = directKeyAlt;
+	button[0].directKeys.push_back(msg);
 	button[0].btn_result = result_value;
 	button[0].btn_alias = alias_value;
 
@@ -337,12 +301,11 @@ void CComponentsFooter::setButtonLabel(	const char *button_icon,
 					const int& label_width,
 					const neutrino_msg_t& msg,
 					const int& result_value,
-					const int& alias_value,
-					const neutrino_msg_t& directKeyAlt)
+					const int& alias_value)
 {
 	string txt = locale != NONEXISTANT_LOCALE ? g_Locale->getText(locale) : "";
 
-	setButtonLabel(button_icon, txt, chain_width, label_width, msg, result_value, alias_value, directKeyAlt);
+	setButtonLabel(button_icon, txt, chain_width, label_width, msg, result_value, alias_value);
 }
 
 void CComponentsFooter::enableButtonBg(bool enable)

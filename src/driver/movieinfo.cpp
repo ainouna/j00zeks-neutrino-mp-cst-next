@@ -34,8 +34,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <gui/widget/msgbox.h>
-#include <gui/movieinfo.h>
+#include <driver/movieinfo.h>
 #include <system/helpers.h>
 
 #include <neutrino.h>
@@ -600,6 +599,7 @@ void MI_MOVIE_INFO::clear(void)
 
 	marked = false;
 	delAsk = true;
+	source = UNKNOWN;
 }
 
 bool CMovieInfo::loadFile(CFile &file, std::string &buffer)

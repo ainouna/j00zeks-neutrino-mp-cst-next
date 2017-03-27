@@ -1570,12 +1570,12 @@ void CMoviePlayerGui::PlayFileLoop(void)
 #if HAVE_COOL_HARDWARE
 			{
 				/* in case ffmpeg report incorrect values */
-				if((playstate == CMoviePlayerGui::PLAY) && (speed == 1)){
+				if(file_prozent > 96 && (playstate == CMoviePlayerGui::PLAY) && (speed == 1)){
 					if(position_tmp != position){
 						position_tmp = position ;
 						eof2 = 0;
 					}else{
-						if (++eof2 > 6) {
+						if (++eof2 > 12) {
 							at_eof = true;
 							break;
 						}
@@ -1641,7 +1641,7 @@ void CMoviePlayerGui::PlayFileLoop(void)
 		}
 
 		if (msg == (neutrino_msg_t) g_settings.mpkey_plugin) {
-			g_PluginList->startPlugin_by_name(g_settings.movieplayer_plugin.c_str ());
+			g_Plugins->startPlugin_by_name(g_settings.movieplayer_plugin.c_str ());
 		} else if (msg == (neutrino_msg_t) g_settings.mpkey_stop) {
 			playstate = CMoviePlayerGui::STOPPED;
 			keyPressed = CMoviePlayerGui::PLUGIN_PLAYSTATE_STOP;
@@ -2917,8 +2917,11 @@ void CMoviePlayerGui::showSubtitle(neutrino_msg_data_t data)
 		clearSubtitle();
 
 		for (unsigned i = 0; i < sub->num_rects; i++) {
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57, 5, 0)
 			uint32_t * colors = (uint32_t *) sub->rects[i]->pict.data[1];
-
+#else
+			uint32_t * colors = (uint32_t *) sub->rects[i]->data[1];
+#endif
 			int xoff = (double) sub->rects[i]->x * xc;
 			int yoff = (double) sub->rects[i]->y * yc;
 			int nw = frameBuffer->getWidth4FB_HW_ACC(xoff, (double) sub->rects[i]->w * xc);
@@ -2927,9 +2930,14 @@ void CMoviePlayerGui::showSubtitle(neutrino_msg_data_t data)
 			printf("Draw: #%d at %d,%d size %dx%d colors %d (x=%d y=%d w=%d h=%d) \n", i+1,
 					sub->rects[i]->x, sub->rects[i]->y, sub->rects[i]->w, sub->rects[i]->h,
 					sub->rects[i]->nb_colors, xoff, yoff, nw, nh);
-
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(57, 5, 0)
 			fb_pixel_t * newdata = simple_resize32 (sub->rects[i]->pict.data[0], colors,
 					sub->rects[i]->nb_colors, sub->rects[i]->w, sub->rects[i]->h, nw, nh);
+#else
+			fb_pixel_t * newdata = simple_resize32 (sub->rects[i]->data[0], colors,
+					sub->rects[i]->nb_colors, sub->rects[i]->w, sub->rects[i]->h, nw, nh);
+#endif
+
 			frameBuffer->blit2FB(newdata, nw, nh, xoff, yoff);
 			free(newdata);
 

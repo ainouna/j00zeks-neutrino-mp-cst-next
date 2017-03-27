@@ -83,7 +83,7 @@ neutrino_LDADD = \
 	gui/widget/libneutrino_gui_widget2.a \
 	driver/pictureviewer/libneutrino_pictureviewer.a \
 	$(MTDUTILSLIBS) \
-	gui/movieinfo.o \
+	driver/movieinfo.o \
 	gui/moviebrowser/mb.o \
 	gui/libneutrino_gui2.a \
 	gui/components/libneutrino_gui_components.a \
@@ -149,15 +149,13 @@ endif
 
 if BOXTYPE_COOL
 neutrino_LDADD += \
-	$(top_builddir)/lib/libcoolstream/libhwcaps.a
+	$(top_builddir)/lib/hardware/coolstream/libhwcaps.a
 neutrino_LDADD += -lcoolstream-mt -lca-sc
-if ENABLE_TMSDK 
-else
+
 if BOXMODEL_CS_HD2
 neutrino_LDADD += -lca-ci -llnxtmvssUsr -llnxUKAL -llnxplatUsr -llnxtmasUsr -llnxdvbciUsr -llnxpvrUsr -llnxcssUsr -llnxnotifyqUsr -ltmpvrDataManager-cst -ltmpvrIndexStorage -llnxscsUsr
 else
 neutrino_LDADD += -lnxp
-endif
 endif
 
 if BOXMODEL_CS_HD2

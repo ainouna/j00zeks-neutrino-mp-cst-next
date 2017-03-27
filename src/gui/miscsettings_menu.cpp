@@ -58,12 +58,11 @@
 #include <zapit/femanager.h>
 #include <eitd/sectionsd.h>
 
-#include <cs_api.h>
 #include <video.h>
 
 #include <sectionsdclient/sectionsdclient.h>
 
-extern CPlugins       * g_PluginList;
+extern CPlugins       * g_Plugins;
 extern cVideo *videoDecoder;
 
 CMiscMenue::CMiscMenue()
@@ -102,7 +101,7 @@ int CMiscMenue::exec(CMenuTarget* parent, const std::string &actionKey)
 	{
 		const char *action_str = "plugin";
 		if(chooserDir(g_settings.plugin_hdd_dir, false, action_str))
-			g_PluginList->loadPlugins();
+			g_Plugins->loadPlugins();
 
 		return menu_return::RETURN_REPAINT;
 	}
@@ -114,13 +113,13 @@ int CMiscMenue::exec(CMenuTarget* parent, const std::string &actionKey)
 		MoviePluginSelector.addItem(GenericMenuSeparatorLine);
 		char id[5];
 		int enabled_count = 0;
-		for(unsigned int count=0;count < (unsigned int) g_PluginList->getNumberOfPlugins();count++)
+		for(unsigned int count=0;count < (unsigned int) g_Plugins->getNumberOfPlugins();count++)
 		{
-			if (!g_PluginList->isHidden(count))
+			if (!g_Plugins->isHidden(count))
 			{
 				sprintf(id, "%d", count);
 				enabled_count++;
-				MoviePluginSelector.addItem(new CMenuForwarder(g_PluginList->getName(count), true, NULL, new CMoviePluginChangeExec(), id, CRCInput::convertDigitToKey(count)));
+				MoviePluginSelector.addItem(new CMenuForwarder(g_Plugins->getName(count), true, NULL, new CMoviePluginChangeExec(), id, CRCInput::convertDigitToKey(count)));
 			}
 		}
 
@@ -282,7 +281,7 @@ int CMiscMenue::showMiscSettingsMenu()
 	misc_menue.addItem(mf);
 
 	//energy, shutdown
-	if (g_info.hw_caps->can_shutdown)
+	if(g_info.hw_caps->can_shutdown)
 	{
 		mf = new CMenuForwarder(LOCALE_MISCSETTINGS_ENERGY, true, NULL, this, "energy", CRCInput::RC_green);
 		mf->setHint("", LOCALE_MENU_HINT_MISC_ENERGY);
@@ -382,7 +381,7 @@ void CMiscMenue::showMiscSettingsMenuGeneral(CMenuWidget *ms_general)
 	ms_general->addItem(mc);
 
 	//fan speed
-	if (g_info.has_fan)
+	if (g_info.hw_caps->has_fan)
 	{
 #if defined (BOXMODEL_IPBOX9900) || defined (BOXMODEL_IPBOX99)
 		CMenuOptionNumberChooser * mn = new CMenuOptionNumberChooser(LOCALE_FAN_SPEED, &g_settings.fan_speed, true, 0, 1, fanNotifier, CRCInput::RC_nokey, NULL, 0, 0, LOCALE_OPTIONS_OFF);

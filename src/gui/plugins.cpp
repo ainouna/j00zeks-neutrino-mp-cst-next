@@ -73,7 +73,7 @@ extern cVideo * videoDecoder;
 #include <daemonc/remotecontrol.h>
 #include <gui/lua/luainstance.h>
 
-extern CPlugins       * g_PluginList;    /* neutrino.cpp */
+extern CPlugins       * g_Plugins;    /* neutrino.cpp */
 extern CRemoteControl * g_RemoteControl; /* neutrino.cpp */
 
 CPlugins::CPlugins()
@@ -378,7 +378,7 @@ void CPlugins::startPlugin_by_name(const std::string & name)
 {
 	for (int i = 0; i <  (int) plugin_list.size(); i++)
 	{
-		if (name.compare(g_PluginList->getName(i)) == 0)
+		if (name.compare(g_Plugins->getName(i)) == 0)
 		{
 			startPlugin(i);
 			return;

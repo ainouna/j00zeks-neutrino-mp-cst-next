@@ -7,7 +7,7 @@
 	Günther@tuxbox.berlios.org
 
 	Implementation of CComponent Window class.
-	Copyright (C) 2014-2016 Thilo Graf 'dbt'
+	Copyright (C) 2014-2017 Thilo Graf 'dbt'
 
 	License: GPL
 
@@ -101,8 +101,7 @@ void CMsgBox::init(const int& Height, const int& ShowButtons, const msg_result_t
 	shadow = CC_SHADOW_ON;
 
 	//set result
-	if (Default_result != mbrNone)
-		result = default_result = Default_result;
+	result = default_result = Default_result;
 
 	//add and initialize footer buttons with required buttons and basic properties
 	if (ShowButtons > -1)
@@ -118,8 +117,8 @@ void CMsgBox::initTimeOut()
 
 void CMsgBox::initButtons()
 {
-	button_label_s btn;
-	vector<button_label_s> v_buttons;
+	button_label_cc btn;
+	vector<button_label_cc> v_buttons;
 
 	//evaluate combinations
 	if (mb_show_button & mbAll)
@@ -135,8 +134,8 @@ void CMsgBox::initButtons()
 	if (mb_show_button & mbOk){
 		btn.button = NEUTRINO_ICON_BUTTON_OKAY;
 		btn.text = BTN_TEXT(mbOk);
-		btn.directKey = CRCInput::RC_ok;
-		btn.directKeyAlt = btn.directKey;
+		btn.directKeys.clear();
+		btn.directKeys.push_back(CRCInput::RC_ok);
 		btn.btn_result = mbrOk;
 		btn.btn_alias = mbOk;
 		v_buttons.push_back(btn);
@@ -144,8 +143,9 @@ void CMsgBox::initButtons()
 	if (mb_show_button & mbNo){
 		btn.button = NEUTRINO_ICON_BUTTON_RED;
 		btn.text = BTN_TEXT(mbNo);
-		btn.directKey = CRCInput::RC_red;
-		btn.directKeyAlt = CRCInput::RC_home;
+		btn.directKeys.clear();
+		btn.directKeys.push_back(CRCInput::RC_red);
+		btn.directKeys.push_back(CRCInput::RC_home);
 		btn.btn_result = mbrNo;
 		btn.btn_alias = mbNo;
 		v_buttons.push_back(btn);
@@ -153,8 +153,9 @@ void CMsgBox::initButtons()
 	if (mb_show_button & mbYes){
 		btn.button = NEUTRINO_ICON_BUTTON_GREEN;
 		btn.text = BTN_TEXT(mbYes);
-		btn.directKey = CRCInput::RC_green;
-		btn.directKeyAlt = CRCInput::RC_ok;
+		btn.directKeys.clear();
+		btn.directKeys.push_back(CRCInput::RC_green);
+		btn.directKeys.push_back(CRCInput::RC_ok);
 		btn.btn_result = mbrYes;
 		btn.btn_alias = mbYes;
 		v_buttons.push_back(btn);
@@ -162,8 +163,9 @@ void CMsgBox::initButtons()
 	if (mb_show_button & mbCancel){
 		btn.button = NEUTRINO_ICON_BUTTON_HOME;
 		btn.text = BTN_TEXT(mbCancel);
-		btn.directKey = CRCInput::RC_home;
-		btn.directKeyAlt = CRCInput::RC_setup;
+		btn.directKeys.clear();
+		btn.directKeys.push_back(CRCInput::RC_home);
+		btn.directKeys.push_back(CRCInput::RC_setup);
 		btn.btn_result = mbrCancel;
 		btn.btn_alias = mbCancel;
 		v_buttons.push_back(btn);
@@ -171,8 +173,8 @@ void CMsgBox::initButtons()
 	if (mb_show_button & mbBack){
 		btn.button = NEUTRINO_ICON_BUTTON_HOME;
 		btn.text = BTN_TEXT(mbBack);
-		btn.directKey = CRCInput::RC_home;
-		btn.directKeyAlt = btn.directKey;
+		btn.directKeys.clear();
+		btn.directKeys.push_back(CRCInput::RC_home);
 		btn.btn_result = mbrBack;
 		btn.btn_alias = mbBack;
 		v_buttons.push_back(btn);
@@ -180,15 +182,18 @@ void CMsgBox::initButtons()
 	if (mb_show_button & mbNoYes){
 		btn.button = NEUTRINO_ICON_BUTTON_RED;
 		btn.text = BTN_TEXT(mbYes);
-		btn.directKey = CRCInput::RC_red;
-		btn.directKeyAlt = CRCInput::RC_ok;
+		btn.directKeys.clear();
+		btn.directKeys.push_back(CRCInput::RC_red);
+		btn.directKeys.push_back(CRCInput::RC_ok);
 		btn.btn_result = mbrYes;
 		btn.btn_alias = mbYes;
 		v_buttons.push_back(btn);
+
 		btn.button = NEUTRINO_ICON_BUTTON_GREEN;
 		btn.text = BTN_TEXT(mbNo);
-		btn.directKey = CRCInput::RC_green;
-		btn.directKeyAlt = CRCInput::RC_home;
+		btn.directKeys.clear();
+		btn.directKeys.push_back(CRCInput::RC_green);
+		btn.directKeys.push_back(CRCInput::RC_home);
 		btn.btn_result = mbrNo;
 		btn.btn_alias = mbNo;
 		v_buttons.push_back(btn);
@@ -274,53 +279,45 @@ int CMsgBox::exec()
 		{
 			scroll_down();
 		}
-		else if (msg){
-			//***navi buttons for button selection***
-			if(msg==CRCInput::RC_right || msg==CRCInput::RC_left)
-			{
-				if(msg==CRCInput::RC_right){
-					ccw_footer->setSelectedButton(selected+1,COL_MENUCONTENTSELECTED_PLUS_2,COL_MENUCONTENT_TEXT);
-					mb_show_button = ccw_footer->getSelectedButtonObject()->getButtonAlias();
-				}
-				if(msg==CRCInput::RC_left){
-					ccw_footer->setSelectedButton(selected-1,COL_MENUCONTENTSELECTED_PLUS_2,COL_MENUCONTENT_TEXT);
-					mb_show_button = ccw_footer->getSelectedButtonObject()->getButtonAlias();
-				}
-				selected = ccw_footer->getSelectedButton();
+		//***navi buttons for button selection***
+		else if(msg == CRCInput::RC_right || msg == CRCInput::RC_left)
+		{
+			if (msg == CRCInput::RC_right)
+				ccw_footer->setSelectedButton(selected+1);
+			else
+				ccw_footer->setSelectedButton(selected-1);
+			mb_show_button = ccw_footer->getSelectedButtonObject()->getButtonAlias();
+			selected = ccw_footer->getSelectedButton();
 
-				//***refresh buttons only if we have more than one button, this avoids unnecessary repaints with possible flicker effects***
-				if (ccw_footer->getButtonChainObject()->size()>1)
-					refreshFoot();
+			//***refresh buttons only if we have more than one button, this avoids unnecessary repaints with possible flicker effects***
+			if (ccw_footer->getButtonChainObject()->size()>1)
+				refreshFoot();
 
-				//***refresh timeout on any pressed navi key! This resets current timeout end to initial value***
-				if (timeout > 0){
-					timeout_pb->setValues(0, timeout);
-					timeoutEnd = CRCInput::calcTimeoutEnd(timeout);
-				}
+			//***refresh timeout on any pressed navi key! This resets current timeout end to initial value***
+			if (timeout > 0) {
+				timeout_pb->setValues(0, timeout);
+				timeoutEnd = CRCInput::calcTimeoutEnd(timeout);
+			}
+			dprintf(DEBUG_INFO, "\033[32m[CMsgBox]   [%s - %d] result = %d, mb_show_button = %d\033[0m\n", __func__, __LINE__, result, mb_show_button);
+		}
+
+		//***action buttons without preselection***
+		for (size_t i = 0; i< ccw_footer->getButtonChainObject()->size(); i++){
+			CComponentsButton* btn_action = static_cast<CComponentsButton*>(ccw_footer->getButtonChainObject()->getCCItem(i));
+			if (btn_action->hasButtonDirectKey(msg)){
+				result = (msg_result_t)btn_action->getButtonResult();
 				dprintf(DEBUG_INFO, "\033[32m[CMsgBox]   [%s - %d] result = %d, mb_show_button = %d\033[0m\n", __func__, __LINE__, result, mb_show_button);
-			}
-
-			//***action buttons without preselection***
-			for (size_t i = 0; i< ccw_footer->getButtonChainObject()->size(); i++){
-				CComponentsButton* btn_action = static_cast<CComponentsButton*>(ccw_footer->getButtonChainObject()->getCCItem(i));
-				if (msg == btn_action->getButtonDirectKey() || msg == btn_action->getButtonDirectKeyA()){
-					result = (msg_result_t)btn_action->getButtonResult();
-					dprintf(DEBUG_INFO, "\033[32m[CMsgBox]   [%s - %d] result = %d, mb_show_button = %d\033[0m\n", __func__, __LINE__, result, mb_show_button);
-					loop = false;
-				}
-			}
-			//***action button ok with preselected button***
-			if ((msg == CRCInput::RC_ok) && (ccw_footer->getSelectedButtonObject()->getButtonAlias() == mb_show_button)){
-				result = (msg_result_t)ccw_footer->getSelectedButtonObject()->getButtonResult();
 				loop = false;
 			}
-			else if (msg == NeutrinoMessages::RECORD_START || msg == NeutrinoMessages::RECORD_STOP) {
-				CNeutrinoApp::getInstance()->handleMsg(msg, data);
-			}
-			//***ignore***
-			else if (CNeutrinoApp::getInstance()->listModeKey(msg)){
-				// do nothing //TODO: if passed rc messages are ignored rc messaages: has no effect here too!!
-			}
+		}
+		//***action button ok with preselected button***
+		if ((msg == CRCInput::RC_ok) && (ccw_footer->getSelectedButtonObject()->getButtonAlias() == mb_show_button)){
+			result = (msg_result_t)ccw_footer->getSelectedButtonObject()->getButtonResult();
+			loop = false;
+		}
+		//***ignore***
+		else if (CNeutrinoApp::getInstance()->listModeKey(msg)){
+			// do nothing //TODO: if passed rc messages are ignored rc messaages: has no effect here too!!
 		}
 		else if (CNeutrinoApp::getInstance()->handleMsg(msg, data) & messages_return::cancel_all)
 		{

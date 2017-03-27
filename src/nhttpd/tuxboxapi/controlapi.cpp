@@ -56,7 +56,7 @@ extern CPictureViewer *g_PicViewer;
 
 extern cVideo * videoDecoder;
 
-extern CPlugins *g_PluginList;//for relodplugins
+extern CPlugins *g_Plugins;//for relodplugins
 extern CBouquetManager *g_bouquetManager;
 #if HAVE_DUCKBOX_HARDWARE
 /* j00zek:we map nevis_ir in startup scripts
@@ -795,18 +795,18 @@ void CControlAPI::MessageCGI(CyhookHandler *hh)
 void CControlAPI::InfoCGI(CyhookHandler *hh)
 {
 	if (hh->ParamList.empty())
-		hh->Write("Neutrino HD\n");
+		hh->Write(PACKAGE_NAME " " PACKAGE_VERSION "\n");
 	else
 	{
 		if (hh->ParamList["1"] == "streaminfo")		// print streaminfo
 			SendStreamInfo(hh);
 		else if (hh->ParamList["1"] == "version")	// send version file
 			hh->SendFile(TARGET_PREFIX "/.version");
-		else if (hh->ParamList["1"] == "httpdversion")	// print httpd version typ (only ffor comptibility)
+		else if (hh->ParamList["1"] == "httpdversion")	// print httpd version typ (just for compatibility)
 			hh->Write("3");
 		else if (hh->ParamList["1"] == "nhttpd_version")// print nhttpd version
 			hh->printf("%s\n", HTTPD_VERSION);
-		else if (hh->ParamList["1"] == "hwinfo")// print hwinfo
+		else if (hh->ParamList["1"] == "hwinfo")	// print hwinfo
 			HWInfoCGI(hh);
 		else
 			hh->SendError();
@@ -815,14 +815,19 @@ void CControlAPI::InfoCGI(CyhookHandler *hh)
 
 void CControlAPI::HWInfoCGI(CyhookHandler *hh)
 {
-	std::string boxname = NeutrinoAPI->NeutrinoYParser->func_get_boxtype(hh, "");
-	std::string boxmodel = NeutrinoAPI->NeutrinoYParser->func_get_boxmodel(hh, "");
-
 	static CNetAdapter netadapter; 
 	std::string eth_id = netadapter.getMacAddr();
 	std::transform(eth_id.begin(), eth_id.end(), eth_id.begin(), ::tolower);
 
-	hh->printf("%s (%s)\nMAC:%s\n", boxname.c_str(), boxmodel.c_str(), eth_id.c_str());
+	std::string boxvendor(g_info.hw_caps->boxvendor);
+	/*
+	   I don't know the current legal situation.
+	   So better let's change the vendor's name to CST.
+	*/
+	if (boxvendor.compare("Coolstream") == 0)
+		boxvendor = "CST";
+
+	hh->printf("%s %s (%s)\nMAC:%s\n", boxvendor.c_str(), g_info.hw_caps->boxname, g_info.hw_caps->boxarch, eth_id.c_str());
 }
 //-----------------------------------------------------------------------------
 void CControlAPI::ShutdownCGI(CyhookHandler *hh)
@@ -2033,7 +2038,7 @@ void CControlAPI::ReloadNeutrinoSetupCGI(CyhookHandler *hh)
 
 void CControlAPI::ReloadPluginsCGI(CyhookHandler *hh)
 {
-	g_PluginList->loadPlugins();
+	g_Plugins->loadPlugins();
 	hh->SendOk();
 }
 
