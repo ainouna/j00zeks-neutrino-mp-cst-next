@@ -1163,7 +1163,7 @@ int CInfoViewerBB::parse_ecmInfo(const char * file)
            free(buffer); 
    } 
  
-   if (g_settings.show_ecm) 
+   if (g_settings.show_ecm && g_settings.show_ecm_pos) 
    { 
        if(decode == UNKNOWN || decode == NA || ecm_txt.empty()) { 
            g_InfoViewer->ecmInfoBox_hide(); 

@@ -4635,9 +4635,9 @@ int CNeutrinoApp::exec(CMenuTarget* parent, const std::string & actionKey)
 		returnval = menu_return::RETURN_NONE;
 	}
 	else if(actionKey=="j00zek_runpli")
-		ExitRun(true, 2);
+		ExitRun(2);
 	else if(actionKey=="j00zek_update")
-		ExitRun(true, 3);
+		ExitRun(3);
 	else if(actionKey=="j00zek_restartoscam")
 	{
 		CHintBox * hintBox = new CHintBox(LOCALE_MESSAGEBOX_INFO,
