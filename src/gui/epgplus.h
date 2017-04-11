@@ -95,6 +95,7 @@ class EpgPlus
 				int width;
 
 				static Font* font;
+				CComponentsHeader *head;
 		};
 
 
@@ -210,6 +211,7 @@ class EpgPlus
 			//// attributes
 			public:
 				const CZapitChannel * channel;
+				std::string displayNumber;
 				std::string displayName;
 				int index;
 
@@ -419,6 +421,7 @@ class EpgPlus
 
 		int		channelListStartIndex;
 		int		maxNumberOfDisplayableEntries; // maximal number of displayable entrys
+		static int	channelNumberOffset;
 
 		time_t		startTime;
 		time_t		firstStartTime;
