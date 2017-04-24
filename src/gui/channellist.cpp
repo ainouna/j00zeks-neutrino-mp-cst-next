@@ -2616,8 +2616,9 @@ void CChannelList::showdescription(int index)
 
 	frameBuffer->paintBoxRel(x+ width,y+ theight+pig_height, infozone_width, infozone_height,COL_MENUCONTENT_PLUS_0);
 	for (int i = 2; (i < (int)epgText.size()+1) && ((y+ theight+ pig_height + i*ffheight) < (y+ theight+ pig_height + infozone_height - 2*ffheight)); i++) {
-		g_Font[eventFont]->RenderString(x+ width+5, y+ theight+ pig_height + i*ffheight, infozone_width - 20, epgText[i-1].first, COL_MENUCONTENTDARK_TEXT);
+		g_Font[eventFont]->RenderString(x+ width+5, y+ theight+ pig_height + i*ffheight, infozone_width - 20, epgText[i-/*j00zek test fix displaying 1st line of description 1*/2].first, COL_MENUCONTENTDARK_TEXT);
 		NextEventsHeight = i*ffheight;
+    printf("LINIA %d '%s'",i-2,epgText[i-2].first.c_str());
 	}
 }
 
