@@ -101,7 +101,6 @@ extern bool autoshift;
 static CComponentsPIP	*cc_minitv = NULL;
 extern CBouquetManager *g_bouquetManager;
 extern int old_b_id;
-static CComponentsChannelLogoScalable* CChannelLogo = NULL;
 static CComponentsHeader *header = NULL;
 static int PIGwidth = 480; //435;
 static int PIGheight = 270; //245;
@@ -132,9 +131,7 @@ CChannelList::CChannelList(const char * const pName, bool phistoryMode, bool _vl
 	eventFont = SNeutrinoSettings::FONT_TYPE_CHANNELLIST_EVENT;
 	dline = NULL;
 	cc_minitv = NULL;
-	logo_off = 0;
 	minitv_is_active = false;
-	CChannelLogo = NULL;
 	headerNew = true;
 	bouquet = NULL;
 	chanlist = &channels;
@@ -983,11 +980,6 @@ void CChannelList::hide()
 	}
 	if(header)
 		header->kill();
-	if (CChannelLogo){
-		CChannelLogo->kill();
-		delete CChannelLogo;
-		CChannelLogo = NULL;
-	}
 
 	frameBuffer->paintBackgroundBoxRel(x, y, full_width, height + OFFSET_INTER + info_height);
 	clearItem2DetailsLine();
@@ -1729,35 +1721,16 @@ void CChannelList::paintAdditionals(int index)
 	}
 }
 
-void CChannelList::showChannelLogo() //TODO: move into an own handler, eg. header, channel logo should be paint inside header object
+void CChannelList::showChannelLogo()
 {
 	if ((*chanlist).empty())
 		return;
 	if(g_settings.channellist_show_channellogo){
-		int logo_w_max = full_width / 4;
-		int logo_h_max = theight - 2*OFFSET_INNER_MIN;
-		if (CChannelLogo) {
-			if (headerNew)
-				CChannelLogo->clearSavedScreen();
-			else
-				CChannelLogo->hide();
-			delete CChannelLogo;
-		}
-		CChannelLogo = new CComponentsChannelLogoScalable(0, 0, (*chanlist)[selected]->getName(), (*chanlist)[selected]->getChannelID());
-
-		if (CChannelLogo->hasLogo()){
-			CChannelLogo->setWidth(min(CChannelLogo->getWidth(), logo_w_max), true);
-			if (CChannelLogo->getHeight() > logo_h_max)
-				CChannelLogo->setHeight(logo_h_max, true);
-			CChannelLogo->setXPos(x + full_width - logo_off - CChannelLogo->getWidth());
-			CChannelLogo->setYPos(y + (theight - CChannelLogo->getHeight()) / 2);
-			CChannelLogo->paint();
-		} else {
-			CChannelLogo->hide();
-			delete CChannelLogo;
-			CChannelLogo = NULL;
-		}
-		headerNew = false;
+		header->setChannelLogo((*chanlist)[selected]->getChannelID(), (*chanlist)[selected]->getName());
+		header->getChannelLogoObject()->hide();
+		header->getChannelLogoObject()->clearSavedScreen();
+		header->getChannelLogoObject()->allowPaint(true);
+		header->getChannelLogoObject()->paint();
 	}
 }
 
@@ -2226,6 +2199,7 @@ void CChannelList::paintHead()
 	}
 
 	header->setDimensionsAll(x, y, full_width, theight);
+	header->setCorner(RADIUS_LARGE, CORNER_TOP);
 
 	if (bouquet && bouquet->zapitBouquet && bouquet->zapitBouquet->bLocked != g_settings.parentallock_defaultlocked)
 		header->setIcon(NEUTRINO_ICON_LOCK);
@@ -2236,18 +2210,12 @@ void CChannelList::paintHead()
 
 	header->setCaption(header_txt, CTextBox::NO_AUTO_LINEBREAK, header_txt_col);
 
-	if (header->enableColBodyGradient(g_settings.theme.menu_Head_gradient, COL_MENUCONTENT_PLUS_0)){
-		if (CChannelLogo)
-			CChannelLogo->clearFbData();
-	}
-
 	if (timeset) {
 		if(!edit_state){
 			if (header->getContextBtnObject())
 				if (!header->getContextBtnObject()->empty())
 					header->removeContextButtons();
 			header->enableClock(true, "%H:%M", "%H %M", true);
-			logo_off = header->getClockObject()->getWidth() + OFFSET_INNER_MID;
 
 			header->getClockObject()->setCorner(RADIUS_LARGE, CORNER_TOP_RIGHT);
 		}else{
@@ -2257,10 +2225,17 @@ void CChannelList::paintHead()
 			}
 		}
 	}
-	else
-		logo_off = OFFSET_INNER_MID;
 
+	if(g_settings.channellist_show_channellogo){
+		//ensure to have clean background
+		header->getChannelLogoObject()->hide();
+		header->setChannelLogo((*chanlist)[selected]->getChannelID(), (*chanlist)[selected]->getName());
+		header->getChannelLogoObject()->allowPaint(false);
+	}
+	else
+		header->setChannelLogo(0, string());
 	header->paint(CC_SAVE_SCREEN_NO);
+	showChannelLogo();
 }
 
 CComponentsHeader* CChannelList::getHeaderObject()
@@ -2279,10 +2254,6 @@ void CChannelList::ResetModules()
 	if (cc_minitv){
 		delete 	cc_minitv;
 		cc_minitv = NULL;
-	}
-	if (CChannelLogo) {
-		delete CChannelLogo;
-		CChannelLogo = NULL;
 	}
 }
 
@@ -2318,7 +2289,7 @@ void CChannelList::paintBody()
 
 	const int ypos = y+ theight;
 	const int sb = height - theight - footerHeight; // paint scrollbar over full height of main box
-	frameBuffer->paintBoxRel(x+ width- 15,ypos, 15, sb,  COL_SCROLLBAR_PASSIVE_PLUS_0);
+	frameBuffer->paintBoxRel(x+ width- 15,ypos, 15, sb,  COL_SCROLLBAR_PLUS_0);
 	unsigned int listmaxshow_tmp = listmaxshow ? listmaxshow : 1;//avoid division by zero
 	int sbc= (((*chanlist).size()- 1)/ listmaxshow_tmp)+ 1;
 	const int sbs= (selected/listmaxshow_tmp);

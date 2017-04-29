@@ -32,13 +32,35 @@
 #include "cc_frm_clock.h"
 #include <driver/colorgradient.h>
 
+#define DEFAULT_LOGO_ALIGN CComponentsHeader::CC_LOGO_CENTER
+
 //! Sub class of CComponentsForm. Shows a header with prepared items.
 /*!
 CComponentsHeader provides prepared items like icon, caption and context button icons, mostly for usage in menues or simple windows
 */
+
 class CComponentsHeader : public CComponentsForm, public CCTextScreen
 {
+	public:
+		///logo position options
+		typedef enum
+		{
+			CC_LOGO_RIGHT 	,
+			CC_LOGO_LEFT 	,
+			CC_LOGO_CENTER
+		}cc_logo_alignment_t;
+
 	private:
+		///required logo data type
+		typedef struct cch_logo_t
+		{
+			uint64_t Id;
+			std::string Name;
+			int32_t	dx_max;
+			int32_t	dy_max;
+			cc_logo_alignment_t Align;
+		} cch_logo_struct_t;
+
 		///member: init genaral variables, parameters for mostly used properties
 		void initVarHeader(	const int& x_pos, const int& y_pos, const int& w, const int& h,
 					const std::string& caption,
@@ -59,6 +81,11 @@ class CComponentsHeader : public CComponentsForm, public CCTextScreen
 		CComponentsIconForm * cch_btn_obj;
 		///object: clock object
 		CComponentsFrmClock * cch_cl_obj;
+		///object: logo object
+		CComponentsChannelLogoScalable * cch_logo_obj;
+
+		///attributes for logos
+		cch_logo_t cch_logo;
 
 		///property: caption text, see also setCaption()
 		std::string cch_text;
@@ -112,6 +139,9 @@ class CComponentsHeader : public CComponentsForm, public CCTextScreen
 		void initButtons();
 		///sub: init clock object
 		void initClock();
+		///sub: init logo object
+		void initLogo();
+
 		///int repaint slot
 		void initRepaintSlot();
 
@@ -269,12 +299,37 @@ class CComponentsHeader : public CComponentsForm, public CCTextScreen
 		virtual void paint(bool do_save_bg = CC_SAVE_SCREEN_YES);
 
 		///hides item, arg: no_restore see hideCCItem()
-		void hide(){disableClock(); CComponents::hide();}
+		void hide(){disableClock(); CComponentsForm::hide();}
 		///erase current screen without restore of background, it's similar to paintBackgroundBoxRel() from CFrameBuffer
 		void kill(const fb_pixel_t& bg_color = COL_BACKGROUND_PLUS_0, const int& corner_radius = -1, const int& fblayer_type = CC_FBDATA_TYPES, bool disable_clock = true);
 
 		///set color gradient on/off, returns true if gradient mode was changed
 		virtual bool enableColBodyGradient(const int& enable_mode, const fb_pixel_t& sec_color = 255 /*=COL_BACKGROUND*/, const int& direction = -1);
+
+		/**Methode to set channel logo into header body via id and/or channel name
+		* @param[in]  	channelId
+		* 		@li required channel id as uint64_t
+		* @param[in]  	channelIName
+		* 		@li required channel name as std::string
+		* @param[in]  	alignment
+		* 		@li optional alingment parameter as cc_logo_alignment_t (enum)\n
+		* 		Possible values are:\n
+		* 		CC_LOGO_RIGHT \n
+		* 		CC_LOGO_CENTER (default)\n
+		* 		CC_LOGO_RIGHT \n
+		* @param[in]  	dy
+		* 		@li optional logo height, default = -1 (auto)
+		* @note 	In auto mode, logo use full height minus inner offset but not larger than original logo height.
+		*/
+		void setChannelLogo(	const uint64_t& channelId,
+					const std::string& channelName,
+					cc_logo_alignment_t alignment = DEFAULT_LOGO_ALIGN,
+					const int& dy = -1)
+					{cch_logo.Id = channelId; cch_logo.Name = channelName, cch_logo.Align = alignment, cch_logo.dy_max = dy; initCCItems();}
+		/**Methode to get channel logo object for direct access to its properties and methodes
+		* @return  	CComponentsChannelLogoScalable*
+		*/
+		CComponentsChannelLogoScalable* getChannelLogoObject(){return cch_logo_obj;}
 };
 
 //! Sub class of CComponentsHeader.

@@ -19,8 +19,7 @@
 	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifdef HAVE_CONFIG_H
@@ -111,15 +110,42 @@ void EpgPlus::Header::paint(const char * Name)
 	std::string caption = Name ? Name : g_Locale->getText(LOCALE_EPGPLUS_HEAD);
 
 	if (this->head == NULL)
+	{
 		this->head = new CComponentsHeader();
+		this->head->setContextButton(CComponentsHeader::CC_BTN_HELP);
+		this->head->enableClock(true, "%H:%M", "%H %M", true);
+	}
 
 	if (this->head)
 	{
+		if (g_settings.channellist_show_channellogo)
+		{
+			// ensure to have clean background
+			this->logo = this->head->getChannelLogoObject();
+			this->logo->hide();
+			this->logo->allowPaint(false);
+		}
 		this->head->setDimensionsAll(this->x, this->y, this->width, this->font->getHeight());
 		this->head->setCaption(caption, CTextBox::NO_AUTO_LINEBREAK);
-		this->head->setContextButton(CComponentsHeader::CC_BTN_HELP);
-		this->head->enableClock(true, "%H:%M", "%H %M", true);
 		this->head->paint(CC_SAVE_SCREEN_NO);
+	}
+}
+
+void EpgPlus::Header::paintChannelLogo(const CZapitChannel * Channel)
+{
+	if (!g_settings.channellist_show_channellogo)
+		return;
+
+	if (this->head)
+	{
+		this->logo->hide();
+		this->logo->clearSavedScreen();
+		if (Channel)
+		{
+			this->head->setChannelLogo(Channel->getChannelID(), Channel->getName());
+		}
+		this->logo->allowPaint(true);
+		this->logo->paint();
 	}
 }
 
@@ -368,7 +394,7 @@ int EpgPlus::ChannelEventEntry::getUsedHeight()
 Font *EpgPlus::ChannelEntry::font = NULL;
 int EpgPlus::ChannelEntry::separationLineThickness = 0;
 
-EpgPlus::ChannelEntry::ChannelEntry(const CZapitChannel * pchannel, int pindex, CFrameBuffer * pframeBuffer, Footer * pfooter, CBouquetList * pbouquetList, int px, int py, int pwidth)
+EpgPlus::ChannelEntry::ChannelEntry(const CZapitChannel * pchannel, int pindex, CFrameBuffer * pframeBuffer, Header * pheader, Footer * pfooter, CBouquetList * pbouquetList, int px, int py, int pwidth)
 {
 	this->channel = pchannel;
 
@@ -383,6 +409,7 @@ EpgPlus::ChannelEntry::ChannelEntry(const CZapitChannel * pchannel, int pindex, 
 	this->index = pindex;
 
 	this->frameBuffer = pframeBuffer;
+	this->header = pheader;
 	this->footer = pfooter;
 	this->bouquetList = pbouquetList;
 
@@ -510,6 +537,8 @@ void EpgPlus::ChannelEntry::paint(bool isSelected, time_t _selectedTime)
 
 		detailsLine->setDimensionsAll(xPos, yPosTop, yPosBottom, this->font->getHeight()/2, this->footer->getUsedHeight() - RADIUS_LARGE*2);
 		detailsLine->paint(false);
+
+		this->header->paintChannelLogo(this->channel);
 	}
 }
 
@@ -644,7 +673,7 @@ void EpgPlus::createChannelEntries(int selectedChannelEntryIndex)
 
 			CZapitChannel * channel = (*this->channelList)[i];
 
-			ChannelEntry *channelEntry = new ChannelEntry(channel, i, this->frameBuffer, this->footer, this->bouquetList, this->channelsTableX, yPosChannelEntry, this->channelsTableWidth);
+			ChannelEntry *channelEntry = new ChannelEntry(channel, i, this->frameBuffer, this->header, this->footer, this->bouquetList, this->channelsTableX, yPosChannelEntry, this->channelsTableWidth);
 			//printf("Going to get getEventsServiceKey for %llx\n", (channel->getChannelID() & 0xFFFFFFFFFFFFULL));
 			CChannelEventList channelEventList;
 			CEitManager::getInstance()->getEventsServiceKey(channel->getEpgID(), channelEventList);

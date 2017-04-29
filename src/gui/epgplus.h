@@ -18,8 +18,7 @@
 	GNU General Public License for more details.
 
 	You should have received a copy of the GNU General Public License
-	along with this program; if not, write to the Free Software
-	Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+	along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef __epgplus__
@@ -69,6 +68,8 @@ class EpgPlus
 
 		class Header
 		{
+			private:
+				CComponentsChannelLogoScalable *logo;
 			//// construction / destruction
 			public:
 				Header(CFrameBuffer* frameBuffer,
@@ -83,6 +84,8 @@ class EpgPlus
 				static void init();
 
 				void paint(const char * Name = NULL);
+
+				void paintChannelLogo(const CZapitChannel * Channel = NULL);
 
 				static int getUsedHeight();
 
@@ -192,6 +195,7 @@ class EpgPlus
 				ChannelEntry(const CZapitChannel* channel,
 					int index,
 					CFrameBuffer* frameBuffer,
+					Header* header,
 					Footer* footer,
 					CBouquetList* bouquetList,
 					int x,
@@ -216,6 +220,7 @@ class EpgPlus
 				int index;
 
 				CFrameBuffer* frameBuffer;
+				Header* header;
 				Footer* footer;
 				CBouquetList* bouquetList;
 
