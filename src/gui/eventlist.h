@@ -32,7 +32,7 @@
 #include <driver/rcinput.h>
 #include <system/settings.h>
 #include <gui/components/cc.h>
-
+#include <gui/widget/navibar.h>
 #include "infoviewer.h"
 
 #include "widget/menue.h"
@@ -95,6 +95,7 @@ class CEventList : public CListHelpers
 	std::string	search_head_name;
 
 	int 		full_width, width, infozone_width;
+	int			botboxheight;
 	int 		height;
 	int 		x;
 	int 		y;
@@ -102,13 +103,17 @@ class CEventList : public CListHelpers
 	int      	sort_mode;
 	event_id_t 	item_event_ID;
 	CComponentsText	*cc_infozone;
-	CComponentsFrmChain *header;
+	CComponentsHeader *header;
+	CProgressBar 	*pb;
+	CNaviBar 	*Bottombox;
 	const char *	unit_short_minute;
 
 	void paintItem(unsigned pos, t_channel_id channel_id = 0);
 	void paintDescription(int index);
 	void paint(t_channel_id channel_id = 0);
 	void paintHead(t_channel_id _channel_id, std::string _channelname, std::string _channelname_prev = "", std::string _channelname_next = "");
+	void paintBottomBox(std::string _channelname_prev, std::string _channelname_next);
+	void showProgressBar(int pos);
 	void hide();
 	void showFunctionBar(t_channel_id channel_id);
 	
@@ -123,6 +128,7 @@ class CEventList : public CListHelpers
 		CEventList();
 		~CEventList();
 		int exec(const t_channel_id channel_id, const std::string& channelname, const std::string& prev = "", const std::string&  next = "", const CChannelEventList &followlist = CChannelEventList ()); // UTF-8
+		void ResetModules();
 };
 
 class CEventListHandler : public CMenuTarget
