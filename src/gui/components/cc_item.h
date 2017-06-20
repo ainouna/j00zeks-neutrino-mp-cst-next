@@ -100,7 +100,7 @@ class CComponentsItem : public CComponents
 		 * 	gui/color.h
 		 * 	driver/framebuffer.h
 		*/
-		virtual void kill(const fb_pixel_t& bg_color = COL_BACKGROUND_PLUS_0, bool ignore_parent = false, const int& fblayer_type = CC_FBDATA_TYPES);
+		virtual void kill(const fb_pixel_t& bg_color = COL_BACKGROUND_PLUS_0, bool ignore_parent = false, const int& fblayer_type = ~CC_FBDATA_TYPES);
 
 		///get the current item type, see attribute cc_item_type above
 		virtual int getItemType();
@@ -110,7 +110,7 @@ class CComponentsItem : public CComponents
 		///set select mode
 		virtual void setSelected(bool selected,
 					const fb_pixel_t& sel_frame_col = COL_MENUCONTENTSELECTED_PLUS_0,
-					const fb_pixel_t& frame_col = COL_SHADOW_PLUS_0,
+					const fb_pixel_t& frame_col = COL_FRAME_PLUS_0,
 					const fb_pixel_t& sel_body_col = COL_MENUCONTENT_PLUS_0,
 					const fb_pixel_t& body_col = COL_MENUCONTENT_PLUS_0,
 					const int& frame_w = 3,

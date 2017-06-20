@@ -114,6 +114,7 @@ void EpgPlus::Header::paint(const char * Name)
 		this->head = new CComponentsHeader();
 		this->head->setContextButton(CComponentsHeader::CC_BTN_HELP);
 		this->head->enableClock(true, "%H:%M", "%H %M", true);
+		this->head->getClockObject()->setBlit(false);
 	}
 
 	if (this->head)
@@ -122,11 +123,12 @@ void EpgPlus::Header::paint(const char * Name)
 		{
 			// ensure to have clean background
 			this->logo = this->head->getChannelLogoObject();
+			this->logo->disableSaveBg();
 			this->logo->hide();
 			this->logo->allowPaint(false);
 		}
 		this->head->setDimensionsAll(this->x, this->y, this->width, this->font->getHeight());
-		this->head->setCaption(caption, CTextBox::NO_AUTO_LINEBREAK);
+		this->head->setCaption(caption);
 		this->head->paint(CC_SAVE_SCREEN_NO);
 	}
 }
@@ -243,6 +245,7 @@ void EpgPlus::TimeLine::paintMark(time_t _startTime, int pduration, int px, int 
 	// paint new mark
 	CProgressBar pbbar = CProgressBar(px, this->y + this->font->getHeight(), pwidth, this->font->getHeight());
 	pbbar.setActiveColor(COL_MENUCONTENTSELECTED_PLUS_0);
+	pbbar.setType(CProgressBar::PB_TIMESCALE);
 
 	time_t currentTime;
 	time(&currentTime);
@@ -927,6 +930,8 @@ int EpgPlus::exec(CChannelList * pchannelList, int selectedChannelIndex, CBouque
 		this->paint();
 		frameBuffer->blit();
 
+		this->header->head->getClockObject()->setBlit();
+
 		uint64_t timeoutEnd = CRCInput::calcTimeoutEnd(g_settings.timing[SNeutrinoSettings::TIMING_CHANLIST]);
 		bool loop = true;
 		while (loop)
@@ -1384,6 +1389,8 @@ void EpgPlus::hide()
 	if (this->header->head)
 	{
 		this->header->head->kill();
+		delete this->header->head;
+		this->header->head = NULL;
 	}
 	this->frameBuffer->paintBackgroundBoxRel(this->usableScreenX - DETAILSLINE_WIDTH, this->usableScreenY, DETAILSLINE_WIDTH + this->usableScreenWidth, this->usableScreenHeight);
 	frameBuffer->blit();
@@ -1429,8 +1436,12 @@ void EpgPlus::paint()
 	this->timeLine->paintGrid();
 
 	// paint slider
-	int total_pages = ((this->channelList->getSize() - 1) / this->maxNumberOfDisplayableEntries) + 1;
-	int current_page = this->selectedChannelEntry == NULL ? 0 : (this->selectedChannelEntry->index / this->maxNumberOfDisplayableEntries);
+	int total_pages;
+	int current_page;
+	getScrollBarData(&total_pages, &current_page,
+		this->channelList->getSize(),
+		this->maxNumberOfDisplayableEntries,
+		this->selectedChannelEntry == NULL ? 0 : this->selectedChannelEntry->index);
 
 	paintScrollBar(this->sliderX, this->sliderY, this->sliderWidth, this->sliderHeight, total_pages, current_page);
 }

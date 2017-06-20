@@ -131,6 +131,7 @@ CChannelList::CChannelList(const char * const pName, bool phistoryMode, bool _vl
 	eventFont = SNeutrinoSettings::FONT_TYPE_CHANNELLIST_EVENT;
 	dline = NULL;
 
+	channelsPainted = false;
 	minitv_is_active = false;
 	headerNew = true;
 	bouquet = NULL;
@@ -368,96 +369,100 @@ int CChannelList::doChannelMenu(void)
 		CBouquetList *blist = tvmode ? TVfavList : RADIOfavList;
 		bool fav_found = true;
 		switch(select) {
-		case 0: {// edit mode
-			bool unlocked = true;
-			if (g_settings.parentallock_prompt == PARENTALLOCK_PROMPT_CHANGETOLOCKED) {
-				int pl_z = g_settings.parentallock_zaptime * 60;
-				if (g_settings.personalize[SNeutrinoSettings::P_MSER_BOUQUET_EDIT] == CPersonalizeGui::PERSONALIZE_MODE_PIN) {
-					unlocked = false;
-				} else if (bouquet && bouquet->zapitBouquet && bouquet->zapitBouquet->bLocked) {
-					/* on locked bouquet, enough to check any channel */
-					unlocked = ((*chanlist)[selected]->last_unlocked_time + pl_z > time_monotonic());
+			case 0: // edit mode
+				{
+					bool unlocked = true;
+					if (g_settings.parentallock_prompt == PARENTALLOCK_PROMPT_CHANGETOLOCKED) {
+						int pl_z = g_settings.parentallock_zaptime * 60;
+
+						if (g_settings.personalize[SNeutrinoSettings::P_MSER_BOUQUET_EDIT] == CPersonalizeGui::PERSONALIZE_MODE_PIN) {
+							unlocked = false;
+						} else if (bouquet && bouquet->zapitBouquet && bouquet->zapitBouquet->bLocked) {
+							/* on locked bouquet, enough to check any channel */
+							unlocked = ((*chanlist)[selected]->last_unlocked_time + pl_z > time_monotonic());
+						} else {
+							/* check all locked channels for last_unlocked_time, overwrite only if already unlocked */
+							for (unsigned int j = 0 ; j < (*chanlist).size(); j++) {
+								if ((*chanlist)[j]->bLocked)
+									unlocked = unlocked && ((*chanlist)[j]->last_unlocked_time + pl_z > time_monotonic());
+							}
+						}
+						if (!unlocked) {
+							CZapProtection *zp = new CZapProtection(g_settings.parentallock_pincode, 0x100);
+							unlocked = zp->check();
+							delete zp;
+						}
+					}
+					if (unlocked)
+						editMode(true);
+
+					ret = -1;
+					break;
+				}
+			case 1: // add to
+				if (!addChannelToBouquet())
+					return -1;
+				ret = 1;
+				break;
+			case 2: // add to my favorites
+				for (unsigned n = 0; n < AllFavBouquetList->Bouquets.size(); n++) {
+					if (AllFavBouquetList->Bouquets[n]->zapitBouquet && AllFavBouquetList->Bouquets[n]->zapitBouquet->bFav) {
+						CZapitChannel *ch = AllFavBouquetList->Bouquets[n]->zapitBouquet->getChannelByChannelID(channel_id);
+						if (ch == NULL) {
+							AllFavBouquetList->Bouquets[n]->zapitBouquet->addService((*chanlist)[selected]);
+							fav_found = false;
+						}
+						break;
+					}
+				}
+				for (unsigned n = 0; n < blist->Bouquets.size() && !fav_found; n++) {
+					if (blist->Bouquets[n]->zapitBouquet && blist->Bouquets[n]->zapitBouquet->bFav) {
+						blist->Bouquets[n]->zapitBouquet->getChannels(blist->Bouquets[n]->channelList->channels, tvmode);
+						saveChanges();
+						fav_found = true;
+						break;
+					}
+				}
+				if (!fav_found) {
+					CNeutrinoApp::getInstance()->MarkFavoritesChanged();
+					CNeutrinoApp::getInstance()->MarkChannelsInit();
+				}
+				ret = 1;
+				break;
+			case 3: // reset new
+			case 4: // reset all new
+				if (select == 3) {
+					(*chanlist)[selected]->flags = CZapitChannel::UPDATED;
 				} else {
-					/* check all locked channels for last_unlocked_time, overwrite only if already unlocked */
-					for (unsigned int j = 0 ; j < (*chanlist).size(); j++) {
-						if ((*chanlist)[j]->bLocked)
-							unlocked = unlocked && ((*chanlist)[j]->last_unlocked_time + pl_z > time_monotonic());
-					}
+					for (unsigned int j = 0 ; j < (*chanlist).size(); j++)
+						(*chanlist)[j]->flags = CZapitChannel::UPDATED;
 				}
-				if (!unlocked) {
-					CZapProtection *zp = new CZapProtection(g_settings.parentallock_pincode, 0x100);
-					unlocked = zp->check();
-					delete zp;
+				CNeutrinoApp::getInstance()->MarkChannelsChanged();
+				/* if make_new_list == ON, signal to re-init services */
+				if(g_settings.make_new_list)
+					CNeutrinoApp::getInstance()->MarkChannelsInit();
+				break;
+			case 5: // clear channel history
+				{
+					CNeutrinoApp::getInstance()->channelList->getLastChannels().clear();
+					printf("%s:%d lastChList cleared\n", __FUNCTION__, __LINE__);
+					ret = -2; // exit channellist
 				}
-			}
-			if (unlocked)
-				editMode(true);
-			ret = -1;
-			break;
-		}case 1: // add to
-			if (!addChannelToBouquet())
-				return -1;
-			ret = 1;
-			break;
-		case 2: // add to my favorites
-			for (unsigned n = 0; n < AllFavBouquetList->Bouquets.size(); n++) {
-				if (AllFavBouquetList->Bouquets[n]->zapitBouquet && AllFavBouquetList->Bouquets[n]->zapitBouquet->bFav) {
-					CZapitChannel *ch = AllFavBouquetList->Bouquets[n]->zapitBouquet->getChannelByChannelID(channel_id);
-					if (ch == NULL) {
-						AllFavBouquetList->Bouquets[n]->zapitBouquet->addService((*chanlist)[selected]);
-						fav_found = false;
-					}
-					break;
+				break;
+			case 6: // settings
+				{
+					previous_channellist_additional = g_settings.channellist_additional;
+					COsdSetup osd_setup;
+					osd_setup.showContextChanlistMenu(this);
+					hide();
+					ResetModules();
+					//FIXME check font/options changed ?
+					calcSize();
+					ret = -1;
 				}
-			}
-			for (unsigned n = 0; n < blist->Bouquets.size() && !fav_found; n++) {
-				if (blist->Bouquets[n]->zapitBouquet && blist->Bouquets[n]->zapitBouquet->bFav) {
-					blist->Bouquets[n]->zapitBouquet->getChannels(blist->Bouquets[n]->channelList->channels, tvmode);
-					saveChanges();
-					fav_found = true;
-					break;
-				}
-			}
-			if (!fav_found) {
-				CNeutrinoApp::getInstance()->MarkFavoritesChanged();
-				CNeutrinoApp::getInstance()->MarkChannelsInit();
-			}
-			ret = 1;
-			break;
-		case 3: // reset new
-		case 4: // reset all new
-			if (select == 3) {
-				(*chanlist)[selected]->flags = CZapitChannel::UPDATED;
-			} else {
-				for (unsigned int j = 0 ; j < (*chanlist).size(); j++)
-					(*chanlist)[j]->flags = CZapitChannel::UPDATED;
-			}
-			CNeutrinoApp::getInstance()->MarkChannelsChanged();
-			/* if make_new_list == ON, signal to re-init services */
-			if(g_settings.make_new_list)
-				CNeutrinoApp::getInstance()->MarkChannelsInit();
-			break;
-		case 5: // clear channel history
-			{
-				CNeutrinoApp::getInstance()->channelList->getLastChannels().clear();
-				printf("%s:%d lastChList cleared\n", __FUNCTION__, __LINE__);
-				ret = -2; // exit channellist
-			}
-			break;
-		case 6: // settings
-			{
-				previous_channellist_additional = g_settings.channellist_additional;
-				COsdSetup osd_setup;
-				osd_setup.showContextChanlistMenu(this);
-				hide();
-				ResetModules();
-				//FIXME check font/options changed ?
-				calcSize();
-				ret = -1;
-			}
-			break;
-		default:
-			break;
+				break;
+			default:
+				break;
 		}
 	}
 	return ret;
@@ -558,8 +563,12 @@ bool CChannelList::updateSelection(int newpos)
 
 		liststart = (selected/listmaxshow)*listmaxshow;
 		if (oldliststart != liststart) {
+			if(!edit_state && header)
+				header->getClockObject()->setBlit(false);
 			paintBody();
 			showChannelLogo();
+			if(!edit_state && header)
+				header->getClockObject()->setBlit();
 			updateVfd();
 		} else {
 			paintItem(prev_selected - liststart);
@@ -1734,13 +1743,15 @@ void CChannelList::showChannelLogo()
 {
 	if ((*chanlist).empty())
 		return;
+
 	if(g_settings.channellist_show_channellogo){
 		header->setChannelLogo((*chanlist)[selected]->getChannelID(), (*chanlist)[selected]->getName());
 		header->getChannelLogoObject()->hide();
 		header->getChannelLogoObject()->clearSavedScreen();
-		header->getChannelLogoObject()->allowPaint(true);
 		header->getChannelLogoObject()->paint();
 	}
+	else
+		header->setChannelLogo(0, string());
 }
 
 #define NUM_LIST_BUTTONS_SORT 9
@@ -1927,11 +1938,11 @@ void CChannelList::paintItem(int pos, const bool firstpaint)
 
 	/* paint selector backgound */
 	if (i_selected && g_settings.j00zek_channellist_png_selector) { 
-		if (!g_PicViewer->DisplayImage(SELECTOR_PNG, x+2, ypos, (width-15-4), fheight, 1 /*transparency flag*/)) {
-			frameBuffer->paintBoxRel(x,ypos, width- 15, fheight, bgcolor, i_radius);
+		if (!g_PicViewer->DisplayImage(SELECTOR_PNG, x+2, ypos, (width-SCROLLBAR_WIDTH-4), fheight, 1 /*transparency flag*/)) {
+			frameBuffer->paintBoxRel(x,ypos, width- SCROLLBAR_WIDTH, fheight, bgcolor, i_radius);
 		}
 	} else if (!firstpaint || i_selected || getKey(curr) == CNeutrinoApp::getInstance()->channelList->getActiveChannelNumber()) {
-		  frameBuffer->paintBoxRel(x,ypos, width- 15, fheight, bgcolor, i_radius);
+		  frameBuffer->paintBoxRel(x,ypos, width- SCROLLBAR_WIDTH, fheight, bgcolor, i_radius);
 		  /*printf("j00zek: curr=%d, firstpaint=%d, i_selected=%d, getKey(curr)=%d, ActiveChannelNumber()=%d, bgcolor=%d\n",
 				  curr,    firstpaint,    i_selected,    getKey(curr), CNeutrinoApp::getInstance()->channelList->getActiveChannelNumber(), bgcolor); */
 	}
@@ -1994,7 +2005,7 @@ void CChannelList::paintItem(int pos, const bool firstpaint)
 		int icon_w = 0;
 		int icon_h = 0;
 		int offset_right = OFFSET_INNER_MID;
-		int icon_x_right = x + width - 15 - offset_right;
+		int icon_x_right = x + width - SCROLLBAR_WIDTH - offset_right;
 
 		if (hd_icon)
 		{
@@ -2098,7 +2109,7 @@ void CChannelList::paintItem(int pos, const bool firstpaint)
 			unsigned int ch_name_len = g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->getRenderWidth(nameAndDescription);
 			unsigned int ch_desc_len = g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->getRenderWidth(p_event->description);
 
-			int max_desc_len = width - numwidth - prg_offset - ch_name_len - 15 - 3*OFFSET_INNER_MID - offset_right; // 15 = scrollbar
+			int max_desc_len = width - numwidth - prg_offset - ch_name_len - SCROLLBAR_WIDTH - 3*OFFSET_INNER_MID - offset_right;
 
 			if (max_desc_len < 0)
 				max_desc_len = 0;
@@ -2112,7 +2123,7 @@ void CChannelList::paintItem(int pos, const bool firstpaint)
 					struct tm *pStartZeit = localtime(&p_event->startTime);
 
 					snprintf(tmp, sizeof(tmp), "%02d:%02d", pStartZeit->tm_hour, pStartZeit->tm_min);
-					g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_NUMBER]->RenderString(x + OFFSET_INNER_MID + numwidth + OFFSET_INNER_MID, ypos + fheight, width - numwidth - 15 - prg_offset - 2*OFFSET_INNER_MID, tmp, ecolor, fheight);
+					g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_NUMBER]->RenderString(x + OFFSET_INNER_MID + numwidth + OFFSET_INNER_MID, ypos + fheight, width - numwidth - SCROLLBAR_WIDTH - prg_offset - 2*OFFSET_INNER_MID, tmp, ecolor, fheight);
 				}
 				else
 				{
@@ -2129,11 +2140,11 @@ void CChannelList::paintItem(int pos, const bool firstpaint)
 				}
 			}
 
-			g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->RenderString(x + OFFSET_INNER_MID + numwidth + OFFSET_INNER_MID + prg_offset + OFFSET_INNER_MID, ypos + fheight, width - numwidth - 4*OFFSET_INNER_MID - 15 - prg_offset, nameAndDescription, color);
+			g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->RenderString(x + OFFSET_INNER_MID + numwidth + OFFSET_INNER_MID + prg_offset + OFFSET_INNER_MID, ypos + fheight, width - numwidth - 4*OFFSET_INNER_MID - SCROLLBAR_WIDTH - prg_offset, nameAndDescription, color);
 			if (g_settings.channellist_epgtext_align_right)
 			{
 				// align right
-				g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->RenderString(x + width - 15 - offset_right - ch_desc_len, ypos + fheight, ch_desc_len, p_event->description, ecolor);
+				g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST_DESCR]->RenderString(x + width - SCROLLBAR_WIDTH - offset_right - ch_desc_len, ypos + fheight, ch_desc_len, p_event->description, ecolor);
 			}
 			else
 			{
@@ -2149,7 +2160,7 @@ void CChannelList::paintItem(int pos, const bool firstpaint)
 				pb.paint();
 			}
 			//name
-			g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->RenderString(x + OFFSET_INNER_MID + numwidth + OFFSET_INNER_MID + prg_offset + OFFSET_INNER_MID, ypos + fheight, width - numwidth - 4*OFFSET_INNER_MID - 15 - prg_offset, nameAndDescription, color);
+			g_Font[SNeutrinoSettings::FONT_TYPE_CHANNELLIST]->RenderString(x + OFFSET_INNER_MID + numwidth + OFFSET_INNER_MID + prg_offset + OFFSET_INNER_MID, ypos + fheight, width - numwidth - 4*OFFSET_INNER_MID - SCROLLBAR_WIDTH - prg_offset, nameAndDescription, color);
 		}
 		if (!firstpaint && curr == selected)
 			updateVfd();
@@ -2195,6 +2206,9 @@ void CChannelList::paint()
 	paintHead();
 	TIMER_STOP("CChannelList::paint() after paint head");
 	paintBody();
+	showChannelLogo();
+	if(!edit_state && header)
+			header->getClockObject()->setBlit();
 	TIMER_STOP("CChannelList::paint() after paint body");
 	updateVfd();
 	TIMER_STOP("CChannelList::paint() paint total");
@@ -2217,35 +2231,28 @@ void CChannelList::paintHead()
 	fb_pixel_t header_txt_col 	= (edit_state ? COL_RED : COL_MENUHEAD_TEXT);
 	header->setColorBody(COL_MENUHEAD_PLUS_0);
 
-	header->setCaption(header_txt, CTextBox::NO_AUTO_LINEBREAK, header_txt_col);
+	header->setCaption(header_txt, DEFAULT_TITLE_ALIGN, header_txt_col);
 
-	if (timeset) {
+//	if (timeset) {
 		if(!edit_state){
 			if (header->getContextBtnObject())
 				if (!header->getContextBtnObject()->empty())
 					header->removeContextButtons();
 			header->enableClock(true, "%H:%M", "%H %M", true);
 
-			header->getClockObject()->setCorner(RADIUS_LARGE, CORNER_TOP_RIGHT);
+			if (header->getClockObject()) {
+				header->getClockObject()->setCorner(RADIUS_LARGE, CORNER_TOP_RIGHT);
+				header->getClockObject()->setBlit(false);
+			}
 		}else{
 			if (header->getClockObject()){
 				header->disableClock();
 				header->setContextButton(CComponentsHeader::CC_BTN_EXIT);
 			}
 		}
-	}
+//	}
 
-	if(g_settings.channellist_show_channellogo){
-		//ensure to have clean background
-		header->getChannelLogoObject()->disableSaveBg();
-		header->getChannelLogoObject()->hide();
-		header->setChannelLogo((*chanlist)[selected]->getChannelID(), (*chanlist)[selected]->getName());
-		header->getChannelLogoObject()->allowPaint(false);
-	}
-	else
-		header->setChannelLogo(0, string());
 	header->paint(CC_SAVE_SCREEN_NO);
-	showChannelLogo();
 }
 
 CComponentsHeader* CChannelList::getHeaderObject()
@@ -2298,19 +2305,16 @@ void CChannelList::paintBody()
 
 	unit_short_minute = g_Locale->getText(LOCALE_UNIT_SHORT_MINUTE);
 
+	channelsPainted = false;
 	for(unsigned int count = 0; count < listmaxshow; count++)
 		paintItem(count, true);
+	channelsPainted = true;
 
-	const int ypos = y+ theight;
-	const int sb = height - theight - footerHeight; // paint scrollbar over full height of main box
-	frameBuffer->paintBoxRel(x+ width- 15,ypos, 15, sb,  COL_SCROLLBAR_PLUS_0);
-	unsigned int listmaxshow_tmp = listmaxshow ? listmaxshow : 1;//avoid division by zero
-	int sbc= (((*chanlist).size()- 1)/ listmaxshow_tmp)+ 1;
-	const int sbs= (selected/listmaxshow_tmp);
-	if (sbc < 1)
-		sbc = 1;
+	int total_pages;
+	int current_page;
+	getScrollBarData(&total_pages, &current_page, (*chanlist).size(), listmaxshow, selected);
+	paintScrollBar(x + width - SCROLLBAR_WIDTH, y + theight, SCROLLBAR_WIDTH, height - theight - footerHeight, total_pages, current_page);
 
-	frameBuffer->paintBoxRel(x+ width- 13, ypos+ 2+ sbs*(sb-4)/sbc, 11, (sb-4)/sbc, COL_SCROLLBAR_ACTIVE_PLUS_0);
 	//showChannelLogo();
 	if ((*chanlist).empty())
 		paintButtonBar(false);
@@ -2532,7 +2536,8 @@ void CChannelList::paint_events(CChannelEventList &evtlist)
 		}
 		i++;
 	}
-	frameBuffer->blit();
+	if(	channelsPainted)
+		frameBuffer->blit();
 }
 
 static bool sortByDateTime (const CChannelEvent& a, const CChannelEvent& b)

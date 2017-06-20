@@ -35,7 +35,7 @@
 
 using namespace std;
 
-CBuildInfo::CBuildInfo(bool show) : CComponentsWindow(0, 0, 700, 500, LOCALE_BUILDINFO_MENU, NEUTRINO_ICON_INFO)
+CBuildInfo::CBuildInfo(bool show) : CComponentsWindow(0, 0, CCW_PERCENT 90, CCW_PERCENT 90, LOCALE_BUILDINFO_MENU, NEUTRINO_ICON_INFO)
 {
 	initVarBuildInfo();
 	if (show)
@@ -53,7 +53,7 @@ void CBuildInfo::initVarBuildInfo()
 	setWindowHeaderButtons(CComponentsHeader::CC_BTN_MENU | CComponentsHeader::CC_BTN_EXIT);
 
 
-	shadow = true;
+	shadow = CC_SHADOW_ON;
 }
 
 

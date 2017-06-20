@@ -103,7 +103,7 @@ void CVolume::setVolume(const neutrino_msg_t key)
 	}
 
 	hideVolscale();
-	showVolscale();
+	//showVolscale();
 
 	neutrino_msg_data_t data = 0;
 	uint64_t timeoutEnd = 0;
@@ -164,12 +164,13 @@ void CVolume::setVolume(const neutrino_msg_t key)
 			break;
 		}
 
-		if (volscale) {
+//		if (volscale) {
 			if(vol != g_settings.current_volume) {
 				vol = g_settings.current_volume;
+				showVolscale();
 				volscale->paint();
 			}
-		}
+//		}
 
 		CVFD::getInstance()->showVolume(g_settings.current_volume);
 		if (msg != CRCInput::RC_timeout) {
