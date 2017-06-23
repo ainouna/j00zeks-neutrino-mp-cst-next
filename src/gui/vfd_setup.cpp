@@ -160,14 +160,16 @@ int CVfdSetup::showSetup()
 	}
 #endif
 
-	if (CVFD::getInstance()->has_lcd) {
+	//if (g_info.hw_caps->can_set_display_brightness)
+	if (CVFD::getInstance()->has_lcd) //j00zek: j00ztrino is cross platform and has different mechanism. Do NOT change it.
+	{
 		//vfd brightness menu
-/*		if (CVFD::getInstance()->supports_brightness) {
+		if (CVFD::getInstance()->supports_brightness) {
 			mf = new CMenuForwarder(LOCALE_LCDMENU_LCDCONTROLER, vfd_enabled, NULL, this, "brightness", CRCInput::RC_green);
 			mf->setHint("", LOCALE_MENU_HINT_VFD_BRIGHTNESS_SETUP);
 			vfds->addItem(mf);
 		}
-*/
+
 		if (cs_get_revision() == 9) // Tank only
 		{
 			//backlight menu
