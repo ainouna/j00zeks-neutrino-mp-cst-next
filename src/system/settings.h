@@ -366,6 +366,7 @@ struct SNeutrinoSettings
 	std::string epg_dir;
 	int epg_scan;
 	int epg_scan_mode;
+	int epg_scan_rescan;
 	int epg_save_mode;
 
 	int epg_search_history_size;
@@ -1090,6 +1091,8 @@ const time_settings_struct_t timing_setting[SNeutrinoSettings::TIMING_SETTING_CO
 #define OFFSET_INNER_NONE	0
 
 #define SCROLLBAR_WIDTH		(OFFSET_INNER_MID + 2*OFFSET_INNER_MIN)
+
+#define FRAME_WIDTH_MIN		CFrameBuffer::getInstance()->scale2Res(2)
 
 #define DETAILSLINE_WIDTH	CFrameBuffer::getInstance()->scale2Res(16)
 

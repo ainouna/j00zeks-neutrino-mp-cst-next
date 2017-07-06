@@ -1398,6 +1398,13 @@ void EpgPlus::hide()
 		delete this->header->head;
 		this->header->head = NULL;
 	}
+
+	if (this->selectedChannelEntry->detailsLine) {
+		this->selectedChannelEntry->detailsLine->kill();
+		delete this->selectedChannelEntry->detailsLine;
+		this->selectedChannelEntry->detailsLine = NULL;
+	}
+
 	this->frameBuffer->paintBackgroundBoxRel(this->usableScreenX, this->usableScreenY, this->usableScreenWidth + OFFSET_SHADOW, this->usableScreenHeight + OFFSET_SHADOW);
 	frameBuffer->blit();
 }
@@ -1449,7 +1456,7 @@ void EpgPlus::paint()
 		this->maxNumberOfDisplayableEntries,
 		this->selectedChannelEntry == NULL ? 0 : this->selectedChannelEntry->index);
 
-	paintScrollBar(this->sliderX, this->sliderY, this->sliderWidth, this->sliderHeight, total_pages, current_page, CC_SHADOW_ON);
+	paintScrollBar(this->sliderX, this->sliderY, this->sliderWidth, this->sliderHeight, total_pages, current_page, CC_SHADOW_RIGHT_CORNER_ALL);
 }
 
 // -- EPG+ Menue Handler Class

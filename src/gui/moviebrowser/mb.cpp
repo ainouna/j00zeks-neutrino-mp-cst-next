@@ -1252,8 +1252,8 @@ bool CMovieBrowser::getSelectedFiles(CFileList &flist, P_MI_MOVIE_LIST &mlist)
 {
 	flist.clear();
 	mlist.clear();
-	P_MI_MOVIE_LIST *handle_list = &m_vHandleBrowserList;
 
+	P_MI_MOVIE_LIST *handle_list = &m_vHandleBrowserList;
 	if (m_windowFocus == MB_FOCUS_LAST_PLAY)
 		handle_list = &m_vHandlePlayList;
 	if (m_windowFocus == MB_FOCUS_LAST_RECORD)
@@ -2531,12 +2531,27 @@ bool CMovieBrowser::onDelete(bool cursor_only)
 
 	MI_MOVIE_INFO *movieinfo;
 	movieinfo = NULL;
-	filelist_it = filelist.end();
-	if (!cursor_only && getSelectedFiles(filelist, movielist))
-		filelist_it = filelist.begin();
-	if (filelist.empty()) { //just add the m_movieSelectionHandler
+
+	getSelectedFiles(filelist, movielist);
+
+	printf("CMovieBrowser::onDelete(%s) filelist  size: %d\n", cursor_only ? "true" : "false", filelist.size());
+	printf("CMovieBrowser::onDelete(%s) movielist size: %d\n", cursor_only ? "true" : "false", movielist.size());
+
+	if (cursor_only || (filelist.empty() || movielist.empty()))
+	{
+		printf("CMovieBrowser::onDelete(%s) clearing the lists\n", cursor_only ? "true" : "false");
+
+		filelist.clear();
+		movielist.clear();
+
+		printf("CMovieBrowser::onDelete(%s) add the m_movieSelectionHandler\n", cursor_only ? "true" : "false");
+
+		// just add the m_movieSelectionHandler
 		filelist.push_back(m_movieSelectionHandler->file);
 		movielist.push_back(m_movieSelectionHandler);
+
+		printf("CMovieBrowser::onDelete(%s) filelist  size: %d\n", cursor_only ? "true" : "false", filelist.size());
+		printf("CMovieBrowser::onDelete(%s) movielist size: %d\n", cursor_only ? "true" : "false", movielist.size());
 	}
 
 	MI_MOVIE_LIST dellist;
@@ -3364,12 +3379,10 @@ int CMovieBrowser::showMovieCutMenu()
 	movieCutMenu.addIntroItems(LOCALE_MOVIEBROWSER_MENU_CUT_HEAD);
 	CMenuForwarder *mf;
 
-#if 0
 	mf = new CMenuForwarder(m_movieSelectionHandler->epgTitle, false);
 	mf->setHint(NEUTRINO_ICON_HINT_MOVIE, NONEXISTANT_LOCALE);
 	movieCutMenu.addItem(mf);
 	movieCutMenu.addItem(GenericMenuSeparator);
-#endif
 
 	mf = new CMenuForwarder(LOCALE_MOVIEBROWSER_MENU_COPY_ONEFILE, true, NULL, this, "copy_onefile", CRCInput::RC_red);
 	mf->setHint(NEUTRINO_ICON_HINT_MOVIE, LOCALE_MOVIEBROWSER_HINT_COPY_ONEFILE);
@@ -3496,9 +3509,13 @@ bool CMovieBrowser::showMenu(bool calledExternally)
 	if (!calledExternally) {
 		CMenuWidget mainMenu(LOCALE_MOVIEBROWSER_HEAD, NEUTRINO_ICON_MOVIEPLAYER);
 		mainMenu.addIntroItems(LOCALE_MOVIEBROWSER_MENU_MAIN_HEAD);
+		if (m_movieSelectionHandler){
+			mainMenu.addItem(new CMenuForwarder(m_movieSelectionHandler->epgTitle, false));
+		}
+		mainMenu.addItem(GenericMenuSeparator);
 		mainMenu.addItem(new CMenuForwarder(LOCALE_MOVIEBROWSER_INFO_HEAD,     (m_movieSelectionHandler != NULL), NULL, this, "show_movie_info_menu", CRCInput::RC_red));
 		mainMenu.addItem(new CMenuForwarder(LOCALE_MOVIEBROWSER_MENU_CUT_HEAD, (m_movieSelectionHandler != NULL), NULL, this, "show_movie_cut_menu",  CRCInput::RC_green));
-		mainMenu.addItem(new CMenuForwarder(LOCALE_FILEBROWSER_DELETE,         (m_movieSelectionHandler != NULL), NULL, this, "delete_movie",         CRCInput::RC_yellow));
+		mainMenu.addItem(new CMenuForwarder(LOCALE_MOVIEBROWSER_DELETE_MOVIE,  (m_movieSelectionHandler != NULL), NULL, this, "delete_movie",         CRCInput::RC_yellow));
 		mainMenu.addItem(GenericMenuSeparatorLine);
 		mainMenu.addItem(new CMenuForwarder(LOCALE_EPGPLUS_OPTIONS,                    true, NULL, &optionsMenu,NULL,                                  CRCInput::RC_1));
 		mainMenu.addItem(new CMenuForwarder(LOCALE_MOVIEBROWSER_MENU_DIRECTORIES_HEAD, true, NULL, &dirMenu,    NULL,                                  CRCInput::RC_2));
